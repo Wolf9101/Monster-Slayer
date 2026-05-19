@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Monster Slayer</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0a0a1a;font-family:sans-serif;overflow:hidden}
+#wrap{width:100vw;height:100vh;position:relative}
+#c{position:absolute;top:0;left:0;width:100%;height:100%}
+#hud{position:absolute;top:6px;left:6px;right:6px;display:flex;gap:4px;flex-wrap:wrap;pointer-events:none;z-index:5}
+.hb{background:rgba(0,0,0,0.85);border:1px solid rgba(255,255,255,0.18);border-radius:6px;padding:3px 8px;color:#fff;font-size:11px}
+.hb b{color:#fbbf24}
+#msg{position:absolute;top:38%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.95);color:#fff;font-size:13px;padding:12px 20px;border-radius:10px;text-align:center;display:none;border:1px solid rgba(255,200,0,0.4);max-width:340px;z-index:20;pointer-events:none;white-space:pre-line;line-height:1.6}
+#overlay{position:absolute;inset:0;background:rgba(0,0,0,0.97);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:30;overflow-y:auto;padding:16px}
+#overlay h1{color:#fbbf24;font-size:24px;margin-bottom:4px;text-shadow:0 0 18px #f59e0b}
+.sub{color:#888;font-size:12px;margin-bottom:14px;text-align:center}
+.obtn{background:rgba(255,190,0,0.13);border:1px solid #fbbf24;color:#fbbf24;border-radius:8px;padding:8px 22px;font-size:13px;cursor:pointer;margin:3px}
+.obtn:hover{background:rgba(255,190,0,0.3)}
+.rbtn{background:rgba(255,60,60,0.13);border:1px solid #ef4444;color:#ef4444;border-radius:8px;padding:7px 16px;font-size:12px;cursor:pointer;margin:3px}
+.gbtn{background:rgba(60,255,60,0.1);border:1px solid #22c55e;color:#22c55e;border-radius:7px;padding:6px 14px;font-size:12px;cursor:pointer;margin-bottom:4px;width:100%;text-align:left}
+.gbtn:hover{background:rgba(60,255,60,0.2)}
+#oc{display:flex;flex-direction:column;align-items:center;width:100%;max-width:440px}
+#btns{position:absolute;bottom:6px;left:50%;transform:translateX(-50%);display:flex;gap:4px;z-index:10;flex-wrap:wrap;justify-content:center}
+#btns button{background:rgba(0,0,0,0.88);border:1px solid rgba(255,255,255,0.22);color:#fff;border-radius:7px;padding:6px 10px;font-size:11px;cursor:pointer}
+#btns button:hover{background:rgba(255,255,255,0.15)}
+#dpad{position:absolute;bottom:50px;right:8px;display:grid;grid-template-columns:repeat(3,38px);gap:3px;z-index:10}
+#dpad button{width:38px;height:38px;font-size:16px;background:rgba(0,0,0,0.88);border:1px solid rgba(255,255,255,0.22);color:#fff;border-radius:6px;cursor:pointer;padding:0}
+#msel{position:absolute;top:48px;right:8px;background:rgba(0,0,0,0.85);border:1px solid rgba(255,255,255,0.18);border-radius:7px;padding:4px 8px;color:#fff;font-size:11px;z-index:10}
+#msel select{background:transparent;border:none;color:#fbbf24;font-size:11px;outline:none;cursor:pointer}
+#wpanel{position:absolute;top:48px;left:8px;z-index:10;display:flex;flex-direction:column;gap:3px;max-height:70vh;overflow-y:auto}
+#wpanel button{background:rgba(0,0,0,0.85);border:1px solid rgba(255,255,255,0.2);color:#ccc;border-radius:6px;padding:4px 10px;font-size:10px;cursor:pointer;white-space:nowrap}
+#wpanel button:hover{background:rgba(255,255,255,0.14)}
+#wpanel button.locked{opacity:0.4;cursor:not-allowed;border-color:rgba(255,0,0,0.3)}
+#eventbanner{position:absolute;top:0;left:0;right:0;text-align:center;padding:4px;font-size:12px;font-weight:bold;z-index:6;pointer-events:none;display:none}
+#playerlist{position:absolute;top:48px;right:110px;background:rgba(0,0,0,0.85);border:1px solid rgba(255,255,255,0.18);border-radius:7px;padding:6px 10px;color:#fff;font-size:10px;z-index:10;max-width:120px}
+</style>
+</head>
+<body>
+<div id="wrap">
+<canvas id="c"></canvas>
+<div id="hud">
+  <div class="hb">❤️<b id="hHp">200</b></div>
+  <div class="hb">💎<b id="hDia">0</b></div>
+  <div class="hb">⭐<b id="hXp">0</b></div>
+  <div class="hb">⚔️<b id="hWpn">Fists</b></div>
+  <div class="hb" id="hTod">☀️Day</div>
+  <div class="hb">🌍<b id="hWld">hub</b></div>
+  <div class="hb">🪵<b id="hWd">20</b></div>
+  <div class="hb">🌀Lv<b id="hMzLvl">1</b></div>
+  <div class="hb" id="hPet" style="display:none">🐉<b id="hPetName"></b></div>
+  <div class="hb" id="hWing" style="display:none">🪽Flying!</div>
+  <div class="hb" id="hEvent" style="display:none;border-color:#f59e0b">🎉<b id="hEventName"></b></div>
+</div>
+<div id="eventbanner"></div>
+<div id="msel">✨<select id="mpick">
+  <option value="none">No Magic</option>
+  <option value="fire">🔥Fire</option>
+  <option value="water">💧Water</option>
+  <option value="earth">🌎Earth</option>
+  <option value="air">💨Air</option>
+</select></div>
+<div id="wpanel" id="wpanel">
+  <div style="color:#fbbf24;font-size:10px;padding:2px 4px">🌍 WORLDS</div>
+  <button onclick="goWorld('hub')">🏝️ Hub</button>
+  <button onclick="goWorld('dungeon')">🏚️ Dungeon</button>
+  <button onclick="goWorld('special')">🌌 Special</button>
+  <button onclick="goWorld('maze')">🌀 Maze</button>
+  <div style="color:#fbbf24;font-size:10px;padding:4px 4px 2px">🎉 EVENTS</div>
+  <div id="eventBtns"></div>
+  <button onclick="toggleFly()" id="flyBtn" style="display:none;border-color:#60a5fa;color:#60a5fa">🪽 Fly</button>
+</div>
+<div id="playerlist">
+  <div style="color:#fbbf24;margin-bottom:4px">👥 Online</div>
+  <div id="plist"></div>
+</div>
+<div id="msg"></div>
+<div id="btns">
+  <button onclick="doAttack()">⚔️Attack</button>
+  <button onclick="doMagic()">✨Magic</button>
+  <button onclick="doFree()">🔓Free</button>
+  <button onclick="doMine()">⛏️Mine</button>
+  <button onclick="doPlace()">🧱Place</button>
+  <button onclick="openCraft()">⚒️Craft</button>
+  <button onclick="openShop()">🏪Shop</button>
+  <button onclick="doPvp()">🥊PvP</button>
+  <button onclick="saveGame()" style="border-color:#22c55e;color:#22c55e">💾Save</button>
+</div>
+<div id="dpad">
+  <div></div><button onclick="mv(0,-1)">▲</button><div></div>
+  <button onclick="mv(-1,0)">◀</button><div></div><button onclick="mv(1,0)">▶</button>
+  <div></div><button onclick="mv(0,1)">▼</button><div></div>
+</div>
+<div id="overlay">
+  <h1>⚔️ MONSTER SLAYER</h1>
+  <div class="sub">By Chan · Jacob · Soyool · Donald 🎮</div>
+  <div id="oc"></div>
+</div>
+</div>
+<script>
+// ── CANVAS ────────────────────────────────────────────────────────────────────
+const cv=document.getElementById('c'),cx=cv.getContext('2d');
+let W,H;
+function resize(){W=cv.width=window.innerWidth;H=cv.height=window.innerHeight;}
+resize();window.addEventListener('resize',resize);
+
+// ── SEASONAL EVENTS ───────────────────────────────────────────────────────────
+// month is 0-indexed (0=Jan, 11=Dec)
+const EVENTS = [
+  {
+    id:'christmas',name:"Christmas",em:'🎄',
+    months:[11], // December
+    color:'#c0392b',bg:'#09151f',
+    desc:'Santa Boss drops 3000 💎!',
+    reward:3000,
+    banner:'🎄 CHRISTMAS EVENT! December only!',
+    bannerColor:'#c0392b',
+  },
+  {
+    id:'newyear',name:"New Year",em:'🎆',
+    months:[0], // January
+    color:'#ffd700',bg:'#0a0a1a',
+    desc:'Ring in the New Year! Firework Boss drops 5000 💎!',
+    reward:5000,
+    banner:'🎆 NEW YEAR EVENT! January only!',
+    bannerColor:'#ffd700',
+  },
+  {
+    id:'valentine',name:"Valentine's",em:'💝',
+    months:[1], // February
+    color:'#e91e63',bg:'#1a0a0f',
+    desc:'Love is in the air! Cupid Boss drops 1500 💎!',
+    reward:1500,
+    banner:"💝 VALENTINE'S EVENT! February only!",
+    bannerColor:'#e91e63',
+  },
+  {
+    id:'stpatrick',name:"St. Patrick's",em:'🍀',
+    months:[2], // March
+    color:'#2ecc71',bg:'#041a04',
+    desc:'Find the pot of gold! Leprechaun Boss drops 2000 💎!',
+    reward:2000,
+    banner:"🍀 ST. PATRICK'S DAY! March only!",
+    bannerColor:'#2ecc71',
+  },
+  {
+    id:'easter',name:"Easter",em:'🐣',
+    months:[3], // April
+    color:'#ff9800',bg:'#0f0a00',
+    desc:'Hunt eggs! Easter Bunny Boss drops 2500 💎!',
+    reward:2500,
+    banner:'🐣 EASTER EVENT! April only!',
+    bannerColor:'#ff9800',
+  },
+  {
+    id:'summer',name:"Summer Fest",em:'🌊',
+    months:[5,6,7], // June, July, August
+    color:'#03a9f4',bg:'#001a2a',
+    desc:'Summer wave! Beach Monster drops 1800 💎!',
+    reward:1800,
+    banner:'🌊 SUMMER FESTIVAL! June-August only!',
+    bannerColor:'#03a9f4',
+  },
+  {
+    id:'halloween',name:"Halloween",em:'🎃',
+    months:[9], // October
+    color:'#f97316',bg:'#050505',
+    desc:'Jack O Boss drops 2500 💎!',
+    reward:2500,
+    banner:'🎃 HALLOWEEN EVENT! October only!',
+    bannerColor:'#f97316',
+  },
+  {
+    id:'thanksgiving',name:"Thanksgiving",em:'🦃',
+    months:[10], // November
+    color:'#d4a057',bg:'#0f0800',
+    desc:'Turkey Boss drops 2200 💎!',
+    reward:2200,
+    banner:'🦃 THANKSGIVING EVENT! November only!',
+    bannerColor:'#d4a057',
+  },
+  {
+    id:'lunar',name:"Lunar New Year",em:'🏮',
+    months:[1], // February (overlaps Valentine's — both active)
+    color:'#ff3d00',bg:'#1a0400',
+    desc:'Dragon parade! Lunar Dragon drops 4000 💎!',
+    reward:4000,
+    banner:'🏮 LUNAR NEW YEAR! February only!',
+    bannerColor:'#ff3d00',
+  },
+  {
+    id:'school',name:"Back to School",em:'📚',
+    months:[8], // September
+    color:'#9c27b0',bg:'#0a001a',
+    desc:'Knowledge is power! Brain Boss drops 1200 💎!',
+    reward:1200,
+    banner:'📚 BACK TO SCHOOL EVENT! September only!',
+    bannerColor:'#9c27b0',
+  },
+];
+
+const now = new Date();
+const CURRENT_MONTH = now.getMonth();
+const CURRENT_DAY = now.getDate();
+
+function getActiveEvents(){
+  return EVENTS.filter(e=>e.months.includes(CURRENT_MONTH));
+}
+function isEventActive(id){
+  return getActiveEvents().some(e=>e.id===id);
+}
+
+// Build event buttons
+function buildEventButtons(){
+  let html='';
+  EVENTS.forEach(e=>{
+    let active=isEventActive(e.id);
+    let monthNames=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    let when=e.months.map(m=>monthNames[m]).join('/');
+    if(active){
+      html+=`<button onclick="goWorld('${e.id}')" style="border-color:${e.color};color:${e.color}">${e.em} ${e.name} ✅</button>`;
+    } else {
+      html+=`<button class="locked" title="Available in ${when}" onclick="showMsg('❌ ${e.name} is only available in ${when}!\\nCome back then! 📅',2500)">${e.em} ${e.name} 🔒 (${when})</button>`;
+    }
+  });
+  document.getElementById('eventBtns').innerHTML=html;
+}
+
+// Event banner
+function showEventBanner(){
+  let active=getActiveEvents();
+  let banner=document.getElementById('eventbanner');
+  if(active.length===0){banner.style.display='none';return;}
+  let ev=active[0];
+  banner.style.display='block';
+  banner.style.background=ev.bannerColor+'cc';
+  banner.style.color='#fff';
+  banner.textContent=ev.banner;
+  // Rotate if multiple events
+  if(active.length>1){
+    let idx=Math.floor(Date.now()/4000)%active.length;
+    let e=active[idx];
+    banner.style.background=e.bannerColor+'cc';
+    banner.textContent=e.banner;
+  }
+  // HUD event indicator
+  let hev=document.getElementById('hEvent');
+  hev.style.display='';
+  document.getElementById('hEventName').textContent=active.map(e=>e.em).join('');
+}
+
+// ── AUDIO ─────────────────────────────────────────────────────────────────────
+let AC;
+function gac(){if(!AC)AC=new(window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();return AC;}
+function tone(f,t,d,v=0.18,dl=0){try{let ac=gac(),o=ac.createOscillator(),g=ac.createGain();o.connect(g);g.connect(ac.destination);o.type=t;o.frequency.value=f;g.gain.setValueAtTime(v,ac.currentTime+dl);g.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+dl+d);o.start(ac.currentTime+dl);o.stop(ac.currentTime+dl+d+0.02);}catch(e){}}
+function sndAtk(){tone(220,'sawtooth',0.08,0.25);tone(160,'sawtooth',0.1,0.18,0.07);}
+function sndHit(){tone(110,'square',0.15,0.3);tone(80,'square',0.1,0.2,0.09);}
+function sndDie(){[300,240,180,120,80].forEach((f,i)=>tone(f,'sawtooth',0.2,0.28,i*0.1));}
+function sndGem(){[523,659,784,1047].forEach((f,i)=>tone(f,'sine',0.18,0.22,i*0.09));}
+function sndKill(){[440,550,660].forEach((f,i)=>tone(f,'triangle',0.18,0.24,i*0.08));}
+function sndMagic(t){({fire:[200,400,600],water:[350,500,700],earth:[100,200,300],air:[600,900,1200]}[t]||[]).forEach((f,i)=>tone(f,'sine',0.14,0.2,i*0.07));}
+function sndStep(){tone(55,'square',0.04,0.07);}
+function sndCraft(){[330,440,550].forEach((f,i)=>tone(f,'triangle',0.12,0.18,i*0.08));}
+function sndBuy(){[440,660,880].forEach((f,i)=>tone(f,'sine',0.14,0.2,i*0.08));}
+function sndMazeMv(){tone(140,'sawtooth',0.06,0.12);}
+function sndMazeClear(){[262,330,392,523,659,784].forEach((f,i)=>tone(f,'sine',0.22,0.26,i*0.1));}
+function sndNight(){[180,140,100].forEach((f,i)=>tone(f,'sine',0.5,0.14,i*0.25));}
+function sndFree(){[392,494,587,784].forEach((f,i)=>tone(f,'sine',0.2,0.22,i*0.09));}
+function sndSave(){[523,659,784].forEach((f,i)=>tone(f,'sine',0.15,0.2,i*0.07));}
+function sndFly(){[400,600,800,1000].forEach((f,i)=>tone(f,'sine',0.2,0.18,i*0.06));}
+function sndEvent(){[523,659,784,880,1047].forEach((f,i)=>tone(f,'sine',0.2,0.24,i*0.08));}
+
+// ── ONLINE PLAYERS ────────────────────────────────────────────────────────────
+const FAKE_PLAYERS=[
+  {name:'Chan',world:'hub',dia:142,em:'🧙'},
+  {name:'Jacob',world:'dungeon',dia:88,em:'⚔️'},
+  {name:'Soyool',world:'special',dia:310,em:'🔮'},
+  {name:'Donald',world:'maze',dia:55,em:'🛡️'},
+  {name:'Pounce',world:'hub',dia:20,em:'🦊'},
+  {name:'Berry',world:'halloween',dia:500,em:'🌟'},
+];
+let onlineTick=0;
+function updatePlayerList(){
+  onlineTick++;
+  if(onlineTick%120===0){
+    let p=FAKE_PLAYERS[Math.floor(Math.random()*FAKE_PLAYERS.length)];
+    const ws=['hub','dungeon','special','maze',...getActiveEvents().map(e=>e.id)];
+    p.world=ws[Math.floor(Math.random()*ws.length)];
+    p.dia+=Math.floor(Math.random()*10);
+  }
+  let html='';
+  FAKE_PLAYERS.forEach(p=>{
+    let same=p.world===G.world;
+    html+=`<div style="color:${same?'#22c55e':'#888'};font-size:10px">${p.em}${p.name}${same?' <b style="color:#fbbf24">HERE</b>':''}</div>`;
+  });
+  document.getElementById('plist').innerHTML=html;
+}
+
+// ── SAVE / LOAD ───────────────────────────────────────────────────────────────
+function saveGame(){
+  gac();
+  const s={hp:G.hp,maxHp:G.maxHp,dia:G.dia,xp:G.xp,swordDmg:G.swordDmg,swordName:G.swordName,wood:G.wood,hasBed:G.hasBed,hasWings:G.hasWings,petName:G.petName,petDmg:G.petDmg,mazeLevel:G.mazeLevel,mazeClear:G.mazeClear,pvpWins:G.pvpWins,world:G.world,secretPetPower:G.secretPetPower,secretPetActive:G.secretPetActive};
+  try{localStorage.setItem('msSave',JSON.stringify(s));sndSave();showMsg('💾 Game Saved!',2000);}
+  catch(e){showMsg('❌ Could not save.',2000);}
+}
+function loadGame(){
+  try{let r=localStorage.getItem('msSave');if(!r)return false;Object.assign(G,JSON.parse(r));hud();return true;}catch(e){return false;}
+}
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let G={
+  hp:200,maxHp:200,dia:0,xp:0,
+  swordDmg:20,swordName:'Fists',
+  mined:0,wood:20,hasBed:false,hasWings:false,flying:false,
+  petName:'',petDmg:0,secretPetPower:'',secretPetActive:false,
+  tick:0,day:true,wasDay:true,dayLen:600,
+  px:0,py:0,world:'hub',
+  mazeX:1,mazeY:1,mazeLevel:1,mazeClear:0,
+  pvpWins:0,gameOn:false
+};
+
+// ── MAZE ──────────────────────────────────────────────────────────────────────
+let mazeGrid=[],MS=9;
+function mazeSize(){return Math.min(29,9+(G.mazeLevel-1)*4);}
+function genMaze(){
+  MS=mazeSize();if(MS%2===0)MS++;
+  mazeGrid=[];
+  for(let r=0;r<MS;r++){mazeGrid[r]=[];for(let c=0;c<MS;c++)mazeGrid[r][c]=1;}
+  function carve(r,c){[[0,2],[2,0],[0,-2],[-2,0]].sort(()=>Math.random()-.5).forEach(([dr,dc])=>{let nr=r+dr,nc=c+dc;if(nr>0&&nr<MS-1&&nc>0&&nc<MS-1&&mazeGrid[nr][nc]===1){mazeGrid[r+dr/2][c+dc/2]=0;mazeGrid[nr][nc]=0;carve(nr,nc);}});}
+  mazeGrid[1][1]=0;carve(1,1);
+  mazeGrid[MS-2][MS-2]=2;
+  for(let i=0;i<G.mazeLevel*4;i++){let r=1+Math.floor(Math.random()*(MS-2)),c=1+Math.floor(Math.random()*(MS-2));if(mazeGrid[r][c]===0&&!(r===1&&c===1)&&!(r===MS-2&&c===MS-2))mazeGrid[r][c]=1;}
+  if(G.mazeLevel>=2)for(let i=0;i<G.mazeLevel*3;i++){let r=2+Math.floor(Math.random()*(MS-4)),c=2+Math.floor(Math.random()*(MS-4));if(mazeGrid[r][c]===0)mazeGrid[r][c]=3;}
+  if(G.mazeLevel>=4)for(let i=0;i<G.mazeLevel*2;i++){let r=2+Math.floor(Math.random()*(MS-4)),c=2+Math.floor(Math.random()*(MS-4));if(mazeGrid[r][c]===0&&!(r===1&&c===1)&&!(r===MS-2&&c===MS-2))mazeGrid[r][c]=4;}
+  G.mazeX=1;G.mazeY=1;
+}
+genMaze();
+
+// ── MONSTERS ──────────────────────────────────────────────────────────────────
+function mkM(id,name,hp,xp,dmg,em,mini,type,cursed,world){return{id,name,x:0,y:0,hp,maxHp:hp,xp,dmg,em,mini,type,cursed,world,alive:true};}
+let MONSTERS=[
+  // Hub
+  mkM(1,'Screaming Doodle',200,60,30,'👾',false,'normal',false,'hub'),
+  mkM(2,'Dungeon Fox Pack',350,150,35,'🦊',false,'normal',false,'hub'),
+  mkM(3,'Cyclops',600,400,80,'🧿',true,'normal',true,'hub'),
+  mkM(4,'Egyptian Cat',500,300,55,'🐱',true,'water',true,'hub'),
+  mkM(5,'Green Croc',400,250,45,'🐊',false,'earth',false,'hub'),
+  mkM(6,'Purple Ghost',300,180,40,'👻',false,'air',false,'hub'),
+  // Dungeon
+  mkM(7,'Evil Pyramid',1400,800,120,'🔺',true,'earth',true,'dungeon'),
+  mkM(8,'Stone Serpent',2500,1200,140,'🐍',true,'normal',true,'dungeon'),
+  mkM(9,'Punch Frog',800,300,90,'🐸',false,'normal',false,'dungeon'),
+  mkM(19,'Lava Beast',1800,600,160,'🔥',false,'fire',false,'dungeon'),
+  mkM(20,'Iron Golem',3000,1500,200,'🗿',true,'earth',true,'dungeon'),
+  mkM(21,'Shadow Bat',600,200,110,'🦇',false,'air',false,'dungeon'),
+  mkM(22,'Dungeon Dragon',5000,2000,180,'🐲',true,'fire',true,'dungeon'),
+  // Special
+  mkM(10,'Snowman',50,20,60,'☃️',false,'water',false,'special'),
+  mkM(11,'Gold Rock',500,150,100,'🪨',false,'earth',false,'special'),
+  mkM(12,'Air Log',999,50,0,'🌪️',false,'air',false,'special'),
+  mkM(13,'Moon Spirit',344,120,80,'🌕',false,'air',false,'special'),
+  mkM(14,'Titanic Wave',1000,400,999,'🌊',false,'water',false,'special'),
+  // Maze
+  mkM(17,'Miniture',9999,5000,1000,'👺',true,'normal',false,'maze'),
+  mkM(18,'Bloody Cyclops',13200,4000,170,'🔴',true,'normal',false,'maze'),
+  // Sky
+  mkM(23,'Monster Eagle',90000,8000,150,'🦅',false,'air',false,'sky'),
+  // Christmas (December)
+  mkM(24,'Santa Boss',5000,3000,120,'🎅',true,'water',false,'christmas'),
+  mkM(25,'Evil Elf',800,400,60,'🧝',false,'normal',false,'christmas'),
+  mkM(26,'Snowflake Monster',1200,600,80,'❄️',false,'water',false,'christmas'),
+  // New Year (January)
+  mkM(27,'Firework Boss',6000,5000,130,'🎆',true,'fire',false,'newyear'),
+  mkM(28,'Clock Demon',2000,800,90,'🕛',false,'normal',false,'newyear'),
+  // Valentine's (February)
+  mkM(29,'Cupid Boss',4000,1500,100,'💘',true,'air',false,'valentine'),
+  mkM(30,'Love Slime',600,300,50,'💗',false,'water',false,'valentine'),
+  // St. Patrick's (March)
+  mkM(31,'Leprechaun Boss',4500,2000,110,'🍀',true,'earth',false,'stpatrick'),
+  mkM(32,'Pot Golem',1500,700,80,'🪙',false,'earth',false,'stpatrick'),
+  // Easter (April)
+  mkM(33,'Easter Bunny Boss',4000,2500,105,'🐰',true,'normal',false,'easter'),
+  mkM(34,'Evil Egg',500,250,55,'🥚',false,'normal',false,'easter'),
+  // Summer (June-Aug)
+  mkM(35,'Beach Monster',5000,1800,120,'🦀',true,'water',false,'summer'),
+  mkM(36,'Sand Shark',2000,900,95,'🦈',false,'water',false,'summer'),
+  mkM(37,'Sunstroke Demon',1500,700,85,'☀️',false,'fire',false,'summer'),
+  // Halloween (October)
+  mkM(38,'Jack O Boss',4000,2500,110,'🎃',true,'fire',false,'halloween'),
+  mkM(39,'Witch',1200,500,75,'🧙‍♀️',false,'air',false,'halloween'),
+  mkM(40,'Zombie',800,350,65,'🧟',false,'normal',false,'halloween'),
+  mkM(41,'Vampire',1500,700,90,'🧛',false,'normal',false,'halloween'),
+  // Thanksgiving (November)
+  mkM(42,'Turkey Boss',5000,2200,115,'🦃',true,'normal',false,'thanksgiving'),
+  mkM(43,'Gravy Monster',1000,450,70,'🍖',false,'water',false,'thanksgiving'),
+  // Lunar New Year (February)
+  mkM(44,'Lunar Dragon',8000,4000,150,'🐉',true,'fire',false,'lunar'),
+  mkM(45,'Firecracker Imp',1000,500,80,'🧨',false,'fire',false,'lunar'),
+  // Back to School (September)
+  mkM(46,'Brain Boss',3500,1200,100,'🧠',true,'air',false,'school'),
+  mkM(47,'Pencil Golem',800,350,65,'✏️',false,'normal',false,'school'),
+];
+function placeMonsters(){MONSTERS.forEach(m=>{m.x=W*0.18+Math.random()*(W*0.64);m.y=H*0.28+Math.random()*(H*0.34);});}
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+let msgT=null;
+function showMsg(t,ms=2800){let el=document.getElementById('msg');el.textContent=t;el.style.display='block';clearTimeout(msgT);msgT=setTimeout(()=>el.style.display='none',ms);}
+function hud(){
+  document.getElementById('hHp').textContent=G.hp+'/'+G.maxHp;
+  document.getElementById('hDia').textContent=G.dia.toLocaleString();
+  document.getElementById('hXp').textContent=G.xp;
+  document.getElementById('hWpn').textContent=G.swordName;
+  document.getElementById('hTod').textContent=G.day?'☀️Day':'🌙Night';
+  document.getElementById('hWld').textContent=G.world;
+  document.getElementById('hWd').textContent=G.wood;
+  document.getElementById('hMzLvl').textContent=G.mazeLevel;
+  let ph=document.getElementById('hPet');
+  if(G.petName){ph.style.display='';document.getElementById('hPetName').textContent=G.petName;}else ph.style.display='none';
+  document.getElementById('hWing').style.display=G.flying?'':'none';
+  document.getElementById('flyBtn').style.display=G.hasWings?'':'none';
+}
+function diaChance(){if(Math.random()<0.0123){G.dia++;sndGem();return'\n💎 Found a Diamond!';}return'';}
+function nearest(){
+  let best=null,bd=9999,world=G.flying?'sky':G.world;
+  MONSTERS.forEach(m=>{if(!m.alive||m.world!==world)return;let d=Math.hypot(m.x-G.px,m.y-G.py);if(d<bd){bd=d;best=m;}});
+  return bd<Math.min(W,H)*0.38?best:null;
+}
+function magicDmg(magic,mtype){const weak={fire:'water',air:'earth',earth:'air',water:'fire'};if(weak[magic]===mtype)return 50;if(magic==='earth')return 40;return 30;}
+function killM(m){
+  m.alive=false;G.xp+=m.xp;sndKill();
+  // Event reward bonus
+  let ev=EVENTS.find(e=>e.id===m.world);
+  let bonus=0;
+  if(ev&&m.mini){bonus=ev.reward;G.dia+=bonus;}
+  let ex=diaChance();
+  let bonusStr=bonus>0?`\n🎉 Event Reward: +${bonus} 💎!`:'';
+  showMsg((m.mini?`✅ ${m.name} defeated!\n+${m.xp} XP${ex}${bonusStr}\n🔓 Free it for more 💎!`:`✅ ${m.name} +${m.xp} XP${ex}`),3500);
+  setTimeout(()=>{m.hp=m.maxHp;m.alive=true;m.x=W*0.18+Math.random()*(W*0.64);m.y=H*0.28+Math.random()*(H*0.34);},12000);
+  hud();
+}
+function die(){sndDie();G.flying=false;let lost=Math.floor(G.dia*0.5);G.dia=Math.max(0,G.dia-lost);G.hp=G.maxHp;showMsg(`💀 You died!\nLost ${lost} 💎. Respawning...`,3500);hud();}
+
+// ── SECRET BRAINOUT ───────────────────────────────────────────────────────────
+function activateSecretBrainout(){
+  let ov=document.getElementById('overlay'),oc=document.getElementById('oc');
+  ov.style.display='flex';
+  document.querySelector('#overlay h1').textContent='🔮 Secret Brainout';
+  document.querySelector('#overlay .sub').textContent='Choose its power — it fights for you automatically!';
+  oc.innerHTML=`
+    <p style="color:#aaa;font-size:12px;margin-bottom:14px;text-align:center">190 dmg to its weak enemy type, 70 to all others.<br>Auto-attacks every 3 seconds!</p>
+    <button class="gbtn" onclick="setSecretPower('fire')">🔥 Fire — 190 dmg to water enemies</button>
+    <button class="gbtn" onclick="setSecretPower('water')">💧 Water — 190 dmg to fire enemies</button>
+    <button class="gbtn" onclick="setSecretPower('earth')">🌎 Earth — 190 dmg to air enemies</button>
+    <button class="rbtn" onclick="closeOv()">✕ Cancel</button>`;
+}
+function setSecretPower(power){
+  G.secretPetPower=power;G.secretPetActive=true;G.petName='Secret Brainout';G.petDmg=70;
+  sndBuy();showMsg(`🔮 Secret Brainout: ${power.toUpperCase()} power!\nIt now fights for you automatically!`,3500);
+  hud();closeOv();
+}
+let secretPetTimer=0;
+function secretPetTick(){
+  if(!G.secretPetActive||!G.gameOn)return;
+  let world=G.flying?'sky':G.world,best=null,bd=9999;
+  MONSTERS.forEach(m=>{if(!m.alive||m.world!==world)return;let d=Math.hypot(m.x-G.px,m.y-G.py);if(d<bd){bd=d;best=m;}});
+  if(!best||bd>W*.45)return;
+  const weak={fire:'water',water:'fire',earth:'air',air:'earth'};
+  let dmg=weak[G.secretPetPower]===best.type?190:70;
+  best.hp-=dmg;tone(800,'sine',0.1,0.2);tone(1000,'sine',0.08,0.15,0.08);
+  if(best.hp<=0)killM(best);
+}
+
+// ── WINGS ─────────────────────────────────────────────────────────────────────
+function toggleFly(){
+  if(!G.hasWings){showMsg('Craft wings first!');return;}
+  G.flying=!G.flying;
+  if(G.flying){sndFly();showMsg('🪽 Flying!\nMonster Eagles (90,000 HP) attack!\nDefeat one to reach the next island!');}
+  else showMsg('🪽 Landed safely.');
+  hud();
+}
+
+// ── ACTIONS ───────────────────────────────────────────────────────────────────
+function doAttack(){
+  gac();if(G.world==='maze'){mazeFight();return;}
+  let m=nearest();if(!m){showMsg('No monster close enough!');return;}
+  sndAtk();let dmg=G.swordDmg+G.petDmg;m.hp-=dmg;
+  if(m.hp<=0)killM(m);else showMsg(`Hit ${m.em}${m.name} for ${dmg}!\n(${Math.max(0,m.hp)}HP left)`);
+}
+function doMagic(){
+  gac();let magic=document.getElementById('mpick').value;
+  if(magic==='none'){showMsg('Choose a magic element first!');return;}
+  sndMagic(magic);let m=nearest();if(!m){showMsg('No monster close enough!');return;}
+  let dmg=magicDmg(magic,m.type);m.hp-=dmg;
+  if(m.hp<=0)killM(m);else showMsg(`${{fire:'🔥',water:'💧',earth:'🌎',air:'💨'}[magic]} ${dmg} dmg on ${m.name}!`);
+}
+function doFree(){
+  let m=nearest();
+  if(!m||!m.mini||!m.cursed){showMsg('No cursed mini-boss nearby!\nWeaken it to 40% HP first.');return;}
+  if(m.hp>m.maxHp*0.4){showMsg(`Weaken ${m.name} below 40% HP first!`);return;}
+  m.cursed=false;G.dia++;sndFree();showMsg(`🔓 ${m.name} freed!\n+1 💎`);hud();
+}
+function doMine(){
+  gac();if(G.mined>=10000){showMsg('⛏️ Mine limit! Place a block first.');return;}
+  G.mined++;if(Math.random()<0.5)G.wood++;tone(150,'square',0.06,0.12);
+  let ex=diaChance();showMsg(ex?'⛏️ Found 💎!'+ex:`⛏️ Mined! Wood:${G.wood}`);hud();
+}
+function doPlace(){
+  if(G.world==='special'){showMsg('❌ No placing in the Special World!');return;}
+  if(G.wood<1){showMsg('No wood! Mine more.');return;}
+  G.wood--;G.mined=Math.max(0,G.mined-1);tone(200,'square',0.08,0.15);
+  showMsg(`🧱 Placed! (wood: ${G.wood})`);hud();
+}
+function doPvp(){
+  gac();let nearby=FAKE_PLAYERS.filter(p=>p.world===G.world);
+  if(nearby.length===0){showMsg('No players here!\nGo to the Hub to find others.');return;}
+  let opp=nearby[Math.floor(Math.random()*nearby.length)];
+  if(Math.random()<0.6){let gain=Math.max(1,Math.floor(opp.dia*.05));G.pvpWins++;G.dia+=gain;sndKill();showMsg(`🥊 Beat ${opp.em}${opp.name}!\n+${gain} 💎! (Wins:${G.pvpWins})`);}
+  else{sndHit();let lost=G.dia>0?1:0;G.dia=Math.max(0,G.dia-lost);showMsg(`🥊 ${opp.em}${opp.name} beat you!\n-${lost} 💎`);}
+  hud();
+}
+function goWorld(w){
+  gac();
+  // Check if event world and active
+  let ev=EVENTS.find(e=>e.id===w);
+  if(ev&&!isEventActive(w)){
+    let monthNames=['January','February','March','April','May','June','July','August','September','October','November','December'];
+    let when=ev.months.map(m=>monthNames[m]).join(' or ');
+    showMsg(`❌ ${ev.em} ${ev.name} is only available in ${when}!\nCome back then! 📅`,3000);return;
+  }
+  if(w==='maze'){
+    let cyc=MONSTERS.find(m=>m.id===3);
+    if(cyc&&cyc.alive){showMsg('🧿 Defeat the Hub Cyclops to unlock the Maze!');return;}
+    genMaze();
+  }
+  G.world=w;G.flying=false;G.px=W/2;G.py=H/2;
+  // Show event welcome
+  if(ev){sndEvent();showMsg(`${ev.em} Welcome to ${ev.name}!\n${ev.desc}`,3000);}
+  else showMsg(`Entered ${w.toUpperCase()}!`);
+  hud();
+}
+function mv(dx,dy){
+  gac();if(G.world==='maze'){moveMaze(dx,dy);return;}
+  let spd=G.flying?Math.floor(W/14):Math.floor(W/22);
+  G.px=Math.max(20,Math.min(W-20,G.px+dx*spd));
+  G.py=Math.max(60,Math.min(H-90,G.py+dy*Math.floor(H/18)));
+  sndStep();
+  if(G.flying){let eagle=MONSTERS.find(m=>m.id===23);if(eagle&&eagle.alive&&Math.hypot(eagle.x-G.px,eagle.y-G.py)<55){G.hp-=150;sndHit();showMsg('🦅 Eagle hit you for 150!');if(G.hp<=0)die();hud();}return;}
+  MONSTERS.forEach(m=>{if(!m.alive||m.world!==G.world)return;if(Math.hypot(m.x-G.px,m.y-G.py)<50){G.hp-=m.dmg;sndHit();showMsg(`${m.em}${m.name} hit you for ${m.dmg}!`);if(G.hp<=0)die();hud();}});
+}
+function moveMaze(dx,dy){
+  let nx=G.mazeX+dx,ny=G.mazeY+dy;if(nx<0||ny<0||nx>=MS||ny>=MS)return;
+  let cell=mazeGrid[ny][nx];
+  if(cell===1){tone(120,'square',0.05,0.1);showMsg('🧱 Wall!');return;}
+  if(cell===4){G.hp-=30;sndHit();showMsg('⚠️ Hidden wall! -30 HP');if(G.hp<=0)die();hud();return;}
+  sndMazeMv();G.mazeX=nx;G.mazeY=ny;
+  if(cell===3){G.hp-=50;sndHit();showMsg('🪤 Trap! -50 HP');if(G.hp<=0)die();hud();}
+  if(cell===2)mazeClearFn();
+  let mini=MONSTERS.find(m=>m.id===17&&m.alive);
+  if(mini&&Math.abs(G.mazeX-Math.floor(MS/2))<3&&Math.abs(G.mazeY-Math.floor(MS/2))<3)showMsg('👺 MINITURE NEARBY! Press Attack!');
+}
+function mazeFight(){
+  sndAtk();let mini=MONSTERS.find(m=>m.id===17&&m.alive);
+  if(mini){mini.hp-=G.swordDmg;if(mini.hp<=0){mini.alive=false;sndKill();showMsg('👺 Miniture defeated!\nFind the 🏆 exit!');}else{G.hp-=1000;sndHit();showMsg(`Hit Miniture for ${G.swordDmg}!\nIt countered for 1000!`);if(G.hp<=0)die();hud();}return;}
+  let bc=MONSTERS.find(m=>m.id===18&&m.alive);
+  if(bc){bc.hp-=G.swordDmg;if(bc.hp<=0){killM(bc);mazeClearFn();}else showMsg(`Hit Bloody Cyclops!\n${Math.max(0,bc.hp)}HP left`);return;}
+  showMsg('Navigate to 👺 or 🔴 first!');
+}
+function mazeClearFn(){
+  G.dia+=10000;G.mazeClear++;G.mazeLevel++;sndMazeClear();
+  let m17=MONSTERS.find(m=>m.id===17),m18=MONSTERS.find(m=>m.id===18);
+  m17.hp=m17.maxHp=9999+G.mazeLevel*2000;m17.alive=true;
+  m18.hp=m18.maxHp=13200+G.mazeLevel*3000;m18.alive=true;
+  showMsg(`🏆 MAZE Lv${G.mazeLevel-1} CLEARED!\n+10,000 💎!\nNext maze: Lv${G.mazeLevel} (${mazeSize()}×${mazeSize()})`,4000);
+  setTimeout(()=>{genMaze();showMsg(`🌀 Maze Lv${G.mazeLevel} — ${MS}×${MS}!`);},4000);hud();
+}
+
+// ── CRAFT / SHOP ──────────────────────────────────────────────────────────────
+function openCraft(){
+  let ov=document.getElementById('overlay'),oc=document.getElementById('oc');
+  ov.style.display='flex';
+  document.querySelector('#overlay h1').textContent='⚒️ Crafting';
+  document.querySelector('#overlay .sub').textContent=`Wood: ${G.wood} | 💎: ${G.dia}`;
+  oc.innerHTML=`
+    <button class="gbtn" onclick="craft('bed')">🛏️ Bed — 5 wood (skip night)</button>
+    <button class="gbtn" onclick="craft('wing')">🪽 Wings — 10 wood + 5💎 (fly!)</button>
+    <button class="gbtn" onclick="craft('woodsword')">🗡️ Wood Sword — 3 wood (30 dmg)</button>
+    <button class="gbtn" onclick="craft('ironsword')">⚔️ Iron Sword — 8 wood + 2💎 (80 dmg)</button>
+    <button class="gbtn" onclick="craft('diamondsword')">💠 Diamond Sword — 15💎 (150 dmg)</button>
+    <button class="rbtn" onclick="closeOv()">✕ Close</button>`;
+}
+function openShop(){
+  let ov=document.getElementById('overlay'),oc=document.getElementById('oc');
+  ov.style.display='flex';
+  document.querySelector('#overlay h1').textContent='🏪 Shop';
+  document.querySelector('#overlay .sub').textContent=`Your 💎: ${G.dia.toLocaleString()}`;
+  oc.innerHTML=`
+    <button class="gbtn" onclick="buy('woodsword')">🗡️ Wood Sword — 5💎 (30 dmg)</button>
+    <button class="gbtn" onclick="buy('ironsword')">⚔️ Iron Sword — 20💎 (80 dmg)</button>
+    <button class="gbtn" onclick="buy('brainout')">🐉 Italian Brainout — 40💎 (+20 dmg)</button>
+    <button class="gbtn" onclick="buy('tralala')">🌟 Tra La Laro — 100💎 (3×HP +70 dmg)</button>
+    <button class="gbtn" onclick="buy('secret')">🔮 Secret Brainout — 233,332,334💎 (auto-fights!)</button>
+    <button class="rbtn" onclick="closeOv()">✕ Close</button>`;
+}
+function closeOv(){document.getElementById('overlay').style.display='none';document.querySelector('#overlay h1').textContent='⚔️ MONSTER SLAYER';document.querySelector('#overlay .sub').textContent='By Chan · Jacob · Soyool · Donald 🎮';}
+function craft(item){
+  const R={bed:{w:5,d:0,msg:'🛏️ Bed crafted! Night skipped!',bed:true},wing:{w:10,d:5,msg:'🪽 Wings crafted!\nPress 🪽Fly to take off!',wing:true},woodsword:{w:3,d:0,msg:'🗡️ Wood Sword!',s:'Wood Sword',dmg:30},ironsword:{w:8,d:2,msg:'⚔️ Iron Sword!',s:'Iron Sword',dmg:80},diamondsword:{w:0,d:15,msg:'💠 Diamond Sword!',s:'Diamond Sword',dmg:150}};
+  let r=R[item];if(!r)return;
+  if(G.wood<r.w||G.dia<r.d){showMsg(`Need: ${r.w}🪵 + ${r.d}💎`);closeOv();return;}
+  G.wood-=r.w;G.dia-=r.d;
+  if(r.bed){G.hasBed=true;G.day=true;}if(r.wing){G.hasWings=true;}if(r.s){G.swordName=r.s;G.swordDmg=r.dmg;}
+  sndCraft();showMsg(r.msg,3000);hud();closeOv();
+}
+function buy(item){
+  const S={woodsword:{c:5,msg:'🗡️ Wood Sword!',s:'Wood Sword',dmg:30},ironsword:{c:20,msg:'⚔️ Iron Sword!',s:'Iron Sword',dmg:80},brainout:{c:40,msg:'🐉 Brainout joined!\n+20 dmg!',p:'Brainout',pd:20},tralala:{c:100,msg:'🌟 Tra La Laro!\n3×HP +70 dmg!',p:'Tra La Laro',pd:70,th:true},secret:{c:233332334,msg:'🔮',secret:true}};
+  let s=S[item];if(!s)return;
+  if(G.dia<s.c){showMsg(`Need ${s.c.toLocaleString()}💎!\nYou have ${G.dia.toLocaleString()}.`);closeOv();return;}
+  G.dia-=s.c;if(s.s){G.swordName=s.s;G.swordDmg=s.dmg;}if(s.p){G.petName=s.p;G.petDmg=s.pd;}if(s.th){G.maxHp=600;G.hp=Math.min(G.hp*3,600);G.swordDmg+=70;}
+  if(s.secret){closeOv();setTimeout(activateSecretBrainout,200);return;}
+  sndBuy();showMsg(s.msg,3000);hud();closeOv();
+}
+
+// ── DRAW WORLDS ───────────────────────────────────────────────────────────────
+function drawHub(){
+  let sc=G.day?'#4a90c8':'#060614';cx.fillStyle=sc;cx.fillRect(0,0,W,H);
+  if(!G.day){cx.fillStyle='rgba(255,255,200,.8)';for(let i=0;i<60;i++)cx.fillRect((i*137+20)%W,(i*89+5)%(H*.5),2,2);}
+  if(G.day){cx.fillStyle='#FFD700';cx.beginPath();cx.arc(W-70,55,28,0,Math.PI*2);cx.fill();}
+  else{cx.fillStyle='#ccd';cx.beginPath();cx.arc(W-70,55,24,0,Math.PI*2);cx.fill();cx.fillStyle=sc;cx.beginPath();cx.arc(W-57,46,19,0,Math.PI*2);cx.fill();}
+  if(G.day){cx.fillStyle='rgba(255,255,255,.82)';[[W*.15,H*.12,70,24],[W*.42,H*.09,90,26],[W*.72,H*.14,60,20]].forEach(([x,y,w,h])=>{cx.beginPath();cx.ellipse(x,y,w,h,0,0,Math.PI*2);cx.fill();});}
+  let isY=H*.68,isW=W*.82,isX=W*.09;
+  cx.fillStyle='#3d7a4a';cx.fillRect(isX,isY,isW,H*.04);cx.fillStyle='#5c4427';cx.fillRect(isX,isY+H*.04,isW,H*.15);
+  const bc=['#e74c3c','#3498db','#f1c40f','#2ecc71','#9b59b6','#e67e22'];
+  let bw=Math.floor(isW/11);
+  for(let i=0;i<11;i++){let bx=isX+i*bw,by=isY;cx.fillStyle=bc[i%6];cx.fillRect(bx,by-H*.044,bw-2,H*.044);cx.fillStyle='rgba(255,255,255,.2)';cx.fillRect(bx,by-H*.044,bw-2,H*.012);}
+  const dc=['#e74c3c','#3498db','#2ecc71','#f39c12'],dl=['D1','D2','D3','D4'];
+  for(let i=0;i<4;i++){let dx=isX+isW*.12+i*isW*.2,dy=isY;cx.fillStyle=dc[i];cx.fillRect(dx,dy,36,H*.08);cx.fillStyle='rgba(0,0,0,.3)';cx.beginPath();cx.arc(dx+29,dy+H*.04,4,0,Math.PI*2);cx.fill();cx.font='10px sans-serif';cx.fillStyle='#fff';cx.fillText(dl[i],dx+6,dy+H*.092);}
+  cx.fillStyle='#888';cx.fillRect(W*.38,isY-H*.1,W*.24,H*.02);cx.fillStyle='#c0392b';cx.fillRect(W*.84,isY-H*.1,W*.12,H*.02);cx.font='11px sans-serif';cx.fillStyle='#ff6b6b';cx.fillText('🔴 Maze',W*.82,isY-H*.11);
+  cx.fillStyle='rgba(41,128,185,.75)';cx.fillRect(0,H*.88,W,H*.12);cx.fillStyle='rgba(100,180,255,.4)';for(let i=0;i<8;i++){let wx=(i*W*.13+G.tick*.5)%W;cx.beginPath();cx.ellipse(wx,H*.92,W*.04,H*.018,0,0,Math.PI*2);cx.fill();}
+  cx.fillStyle='#7a1a00';cx.fillRect(0,H*.965,W,H*.035);cx.fillStyle='#e74c3c';for(let i=0;i<10;i++){let lx=(i*W*.1+G.tick*.8)%W;cx.beginPath();cx.arc(lx,H*.975,W*.012,0,Math.PI*2);cx.fill();}
+  cx.font=`bold ${Math.floor(H*.03)}px sans-serif`;cx.fillStyle=G.day?'#1a2a1a':'#ffffffcc';cx.fillText('🏝️ THE HUB',W*.42,isY+H*.02);
+  if(!G.day){cx.fillStyle='rgba(0,0,20,.38)';cx.fillRect(0,0,W,H);}
+}
+
+function drawDungeon(){
+  cx.fillStyle='#0a0404';cx.fillRect(0,0,W,H);
+  for(let r=0;r<Math.ceil(H/48);r++)for(let c=0;c<Math.ceil(W/64);c++){cx.fillStyle=(r+c)%2===0?'#1a0808':'#1e0c0c';cx.fillRect(c*64,r*48,64,48);cx.strokeStyle='#3a1818';cx.strokeRect(c*64,r*48,64,48);}
+  [H*.35,H*.55,H*.75].forEach((ly,i)=>{cx.fillStyle='#8B0000';cx.fillRect(0,ly,W,H*.05);cx.fillStyle='#e74c3c';for(let j=0;j<12;j++){let lx=(j*W*.09+G.tick*(1.2+i*.3))%W;cx.beginPath();cx.arc(lx,ly+H*.025,W*.016,0,Math.PI*2);cx.fill();}});
+  cx.fillStyle='#888';for(let i=0;i<16;i++){let tx=W*.04+i*W*.062;[H*.28,H*.48,H*.68].forEach(sy=>{cx.beginPath();cx.moveTo(tx,sy);cx.lineTo(tx+W*.025,sy-H*.04);cx.lineTo(tx+W*.05,sy);cx.fill();});}
+  for(let i=0;i<7;i++){let tx=W*.08+i*W*.14;cx.fillStyle='#c0392b';cx.fillRect(tx,H*.08,8,22);cx.fillStyle='#f39c12';cx.beginPath();cx.arc(tx+4,H*.07,8,0,Math.PI*2);cx.fill();let fl=Math.sin(G.tick*.15+i)*5;cx.fillStyle='rgba(255,160,0,.35)';cx.beginPath();cx.arc(tx+4,H*.07,18+fl,0,Math.PI*2);cx.fill();}
+  cx.font=`bold ${Math.floor(H*.03)}px sans-serif`;cx.fillStyle='#e74c3c';cx.fillText('🏚️ DUNGEON — EXTREME DANGER',W*.22,H*.05);
+}
+
+function drawSpecial(){
+  cx.fillStyle='#06061a';cx.fillRect(0,0,W,H);
+  cx.fillStyle='rgba(180,180,255,.85)';for(let i=0;i<90;i++)cx.fillRect((i*97+10)%W,(i*137+5)%H,2,2);
+  const pc=['#5b2d8e','#1a5276','#145a32','#7d6608'];
+  [[.1,.52,.18],[.3,.44,.15],[.52,.54,.22],[.72,.46,.15],[.2,.34,.13],[.68,.32,.14]].forEach(([x,y,w],i)=>{cx.fillStyle=pc[i%4];cx.fillRect(x*W,y*H,w*W,H*.03);});
+  cx.font='32px serif';['🌋','💨','🌊','🌑'].forEach((e,i)=>cx.fillText(e,W*.12+i*W*.22,H*.55));
+  cx.font=`bold ${Math.floor(H*.03)}px sans-serif`;cx.fillStyle='#a855f7';cx.fillText('🌌 SPECIAL WORLD',W*.32,H*.08);
+}
+
+function drawMaze(){
+  cx.fillStyle='#050508';cx.fillRect(0,0,W,H);
+  let cs=Math.min(Math.floor(W*.88/MS),Math.floor(H*.88/MS));
+  let ox=Math.floor((W-MS*cs)/2),oy=Math.floor((H-MS*cs)/2);
+  for(let r=0;r<MS;r++)for(let c=0;c<MS;c++){
+    let v=mazeGrid[r][c],x=ox+c*cs,y=oy+r*cs;
+    if(v===1){cx.fillStyle='#18082a';cx.fillRect(x,y,cs,cs);cx.fillStyle='#2a0e40';cx.fillRect(x+1,y+1,cs-2,4);cx.strokeStyle='#3a1a4a';cx.strokeRect(x,y,cs,cs);}
+    else if(v===2){cx.fillStyle='#c8a800';cx.fillRect(x+1,y+1,cs-2,cs-2);cx.font=`${Math.max(10,cs-6)}px serif`;cx.fillText('🏆',x+2,y+cs-3);}
+    else if(v===3){cx.fillStyle='#3a0808';cx.fillRect(x,y,cs,cs);cx.fillStyle='#ff3333';cx.fillRect(x+2,y+cs-4,cs-4,3);if(cs>14){cx.font='10px serif';cx.fillText('⚠️',x+1,y+cs-1);}}
+    else if(v===4){cx.fillStyle='#0f0520';cx.fillRect(x,y,cs,cs);cx.fillStyle='rgba(80,0,80,.3)';cx.fillRect(x,y,cs,cs);}
+    else{cx.fillStyle='#0a050e';cx.fillRect(x,y,cs,cs);}
+  }
+  let mini=MONSTERS.find(m=>m.id===17&&m.alive);
+  if(mini){let mx=ox+Math.floor(MS/2)*cs+cs/2,my=oy+Math.floor(MS/2)*cs+cs/2;cx.font=`${Math.max(12,cs-4)}px serif`;cx.fillText('👺',mx-cs/2,my+cs*.4);}
+  let px=ox+G.mazeX*cs+cs/2,py=oy+G.mazeY*cs+cs/2;
+  cx.fillStyle='#22c55e';cx.beginPath();cx.arc(px,py,Math.max(5,cs/3.2),0,Math.PI*2);cx.fill();
+  cx.fillStyle='#fff';cx.font=`bold ${Math.max(8,cs/3)}px sans-serif`;cx.fillText('YOU',px-cs*.3,py+cs*.2);
+  cx.font=`bold ${Math.floor(H*.02)}px sans-serif`;cx.fillStyle='#ff6b6b';cx.fillText(`🌀 Maze Lv${G.mazeLevel} (${MS}×${MS}) — Find 🏆 | Space=Fight`,W*.05,H*.97);
+  cx.font=`${Math.floor(H*.016)}px sans-serif`;cx.fillStyle='#888';cx.fillText('⚠️=Trap  Purple=Hidden Wall  👺=Miniture  🏆=Exit',W*.05,H*.028);
+}
+
+function drawEventWorld(evId){
+  let ev=EVENTS.find(e=>e.id===evId);
+  if(!ev){drawHub();return;}
+  cx.fillStyle=ev.bg;cx.fillRect(0,0,W,H);
+  // Decorations per event
+  if(evId==='christmas'){
+    cx.fillStyle='#ddeeff';cx.fillRect(0,H*.72,W,H*.28);
+    for(let i=0;i<5;i++){let tx=W*.1+i*W*.18;cx.fillStyle='#1e7a1e';cx.beginPath();cx.moveTo(tx,H*.72);cx.lineTo(tx-W*.06,H*.54);cx.lineTo(tx+W*.06,H*.54);cx.closePath();cx.fill();cx.fillStyle='#8B0000';cx.fillRect(tx-W*.016,H*.74,W*.032,H*.06);}
+    cx.fillStyle='rgba(200,220,255,.75)';for(let i=0;i<28;i++)cx.fillRect((i*W*.037+G.tick*.4)%W,(i*H*.06+G.tick*.25)%H,4,4);
+    cx.font='40px serif';cx.fillText('⭐',W*.5-20,H*.08);
+  } else if(evId==='newyear'){
+    // Fireworks
+    [[W*.2,H*.3,'#ff0'],[W*.5,H*.2,'#f0f'],[W*.8,H*.35,'#0ff'],[W*.35,H*.45,'#f80'],[W*.65,H*.25,'#0f0']].forEach(([fx,fy,col])=>{
+      let r=(G.tick*2)%60;cx.strokeStyle=col;cx.lineWidth=2;
+      for(let a=0;a<12;a++){let ang=a*Math.PI/6;cx.beginPath();cx.moveTo(fx,fy);cx.lineTo(fx+Math.cos(ang)*r,fy+Math.sin(ang)*r);cx.stroke();}cx.lineWidth=1;
+    });
+    cx.fillStyle='rgba(255,215,0,.9)';cx.font=`bold ${Math.floor(H*.06)}px sans-serif`;cx.fillText('🎆 HAPPY NEW YEAR!',W*.2,H*.12);
+  } else if(evId==='valentine'){
+    cx.fillStyle='#ff69b4';for(let i=0;i<20;i++){let hx=(i*W*.06+G.tick*.3)%W,hy=(i*H*.09+G.tick*.2)%H;cx.font='24px serif';cx.fillText('💕',hx,hy);}
+    cx.font=`bold ${Math.floor(H*.04)}px sans-serif`;cx.fillStyle='#ff1493';cx.fillText("💝 VALENTINE'S DAY!",W*.25,H*.08);
+  } else if(evId==='stpatrick'){
+    cx.fillStyle='rgba(46,204,113,.15)';cx.fillRect(0,0,W,H);
+    for(let i=0;i<15;i++){let rx=(i*W*.07+G.tick*.2)%W,ry=(i*H*.08)%H;cx.font='28px serif';cx.fillText('🍀',rx,ry);}
+    cx.fillStyle='rgba(212,175,55,.9)';cx.beginPath();cx.arc(W*.85,H*.85,H*.08,0,Math.PI*2);cx.fill();cx.font='28px serif';cx.fillText('🪙🪙🪙',W*.82,H*.87);
+    cx.font=`bold ${Math.floor(H*.04)}px sans-serif`;cx.fillStyle='#2ecc71';cx.fillText("🍀 ST. PATRICK'S DAY!",W*.25,H*.08);
+  } else if(evId==='easter'){
+    cx.fillStyle='#90ee90';cx.fillRect(0,H*.7,W,H*.3);
+    for(let i=0;i<12;i++){cx.font='28px serif';cx.fillText('🥚',(W*.06+i*W*.08),H*.75+Math.sin(i)*H*.04);}
+    for(let i=0;i<6;i++){cx.font='24px serif';cx.fillText('🌸',W*.08+i*W*.16,H*.4+Math.sin(G.tick*.02+i)*H*.08);}
+    cx.font=`bold ${Math.floor(H*.04)}px sans-serif`;cx.fillStyle='#ff9800';cx.fillText('🐣 EASTER!',W*.35,H*.08);
+  } else if(evId==='summer'){
+    cx.fillStyle='#006994';cx.fillRect(0,H*.5,W,H*.5);cx.fillStyle='#87CEEB';cx.fillRect(0,0,W,H*.5);
+    cx.fillStyle='#FFD700';cx.beginPath();cx.arc(W*.5,H*.15,H*.1,0,Math.PI*2);cx.fill();
+    for(let i=0;i<8;i++){let wx=(i*W*.13+G.tick*.5)%W;cx.fillStyle='rgba(255,255,255,.5)';cx.beginPath();cx.ellipse(wx,H*.6,W*.05,H*.02,0,0,Math.PI*2);cx.fill();}
+    cx.fillStyle='#ffe4c4';cx.fillRect(0,H*.48,W,H*.04);
+    cx.font=`bold ${Math.floor(H*.04)}px sans-serif`;cx.fillStyle='#ff6b00';cx.fillText('🌊 SUMMER FESTIVAL!',W*.25,H*.08);
+  } else if(evId==='halloween'){
+    cx.fillStyle='#120800';cx.fillRect(0,H*.68,W,H*.32);
+    for(let i=0;i<5;i++){cx.font=`${Math.floor(H*.055)}px serif`;cx.fillText('🎃',W*.07+i*W*.18,H*.78);}
+    cx.fillStyle='#cc6600';cx.beginPath();cx.arc(W*.88,H*.1,H*.062,0,Math.PI*2);cx.fill();
+    cx.font=`${Math.floor(H*.04)}px serif`;for(let i=0;i<6;i++)cx.fillText('🦇',(W*.14+i*W*.14+G.tick*.6)%W,H*.14+Math.sin((G.tick*.025)+i)*H*.05);
+    cx.font=`bold ${Math.floor(H*.04)}px sans-serif`;cx.fillStyle='#f97316';cx.fillText('🎃 HALLOWEEN!',W*.3,H*.08);
+  } else if(evId==='thanksgiving'){
+    cx.fillStyle='#4a3000';cx.fillRect(0,H*.7,W,H*.3);cx.fillStyle='#8B6914';cx.fillRect(0,H*.65,W,H*.06);
+    for(let i=0;i<6;i++){cx.font='36px serif';cx.fillText('🍂',(W*.05+i*W*.16),H*.5+Math.sin(G.tick*.015+i)*H*.1);}
+    cx.font='44px serif';cx.fillText('🦃',W*.45,H*.72);
+    cx.font=`bold ${Math.floor(H*.04)}px sans-serif`;cx.fillStyle='#d4a057';cx.fillText('🦃 THANKSGIVING!',W*.28,H*.08);
+  } else if(evId==='lunar'){
+    cx.fillStyle='rgba(255,50,0,.1)';cx.fillRect(0,0,W,H);
+    for(let i=0;i<10;i++){let lx=(i*W*.1+G.tick*.4)%W;cx.font='28px serif';cx.fillText('🏮',lx,H*.2+Math.sin(G.tick*.02+i)*H*.05);}
+    cx.font='50px serif';cx.fillText('🐉',W*.45,H*.45);
+    for(let i=0;i<15;i++){let fx=(i*W*.07+G.tick*.3)%W;cx.font='20px serif';cx.fillText('🧨',fx,H*.7+Math.sin(i)*H*.05);}
+    cx.font=`bold ${Math.floor(H*.04)}px sans-serif`;cx.fillStyle='#ff3d00';cx.fillText('🏮 LUNAR NEW YEAR!',W*.26,H*.08);
+  } else if(evId==='school'){
+    cx.fillStyle='#f5f5dc';cx.fillRect(0,H*.7,W,H*.3);
+    for(let i=0;i<5;i++){let bx=W*.1+i*W*.18,by=H*.72;cx.fillStyle='#8B4513';cx.fillRect(bx,by,W*.12,H*.15);cx.fillStyle=`hsl(${i*60},70%,50%)`;cx.fillRect(bx+4,by+4,W*.1,H*.11);}
+    cx.font='40px serif';cx.fillText('🧠',W*.48,H*.42);cx.fillText('📚',W*.3,H*.38);cx.fillText('✏️',W*.62,H*.44);
+    cx.font=`bold ${Math.floor(H*.04)}px sans-serif`;cx.fillStyle='#9c27b0';cx.fillText('📚 BACK TO SCHOOL!',W*.27,H*.08);
+  }
+}
+
+function drawSky(){
+  cx.fillStyle='#1a3a6a';cx.fillRect(0,0,W,H);
+  cx.fillStyle='rgba(255,255,255,.7)';for(let i=0;i<12;i++){cx.beginPath();cx.ellipse((i*W*.09+G.tick*.3)%W,H*.2+Math.sin(G.tick*.02+i)*H*.1,W*.07,H*.04,0,0,Math.PI*2);cx.fill();}
+  cx.fillStyle='rgba(61,122,74,.6)';cx.beginPath();cx.ellipse(W*.2,H*.8,W*.15,H*.06,0,0,Math.PI*2);cx.fill();
+  cx.fillStyle='rgba(61,122,74,.6)';cx.beginPath();cx.ellipse(W*.75,H*.85,W*.18,H*.07,0,0,Math.PI*2);cx.fill();
+  cx.font=`bold ${Math.floor(H*.03)}px sans-serif`;cx.fillStyle='#93c5fd';cx.fillText('🪽 FLYING — Defeat 🦅 Eagle to reach next island',W*.1,H*.08);
+}
+
+function drawMonsters(){
+  let world=G.flying?'sky':G.world;
+  MONSTERS.forEach(m=>{
+    if(!m.alive||m.world!==world||world==='maze')return;
+    if(G.tick%8===0){let spd=G.day?1.6:3.4,dx=G.px-m.x,dy=G.py-m.y,d=Math.hypot(dx,dy);if(d>60&&d<W*.5){m.x+=dx/d*spd;m.y+=dy/d*spd;}}
+    let fs=m.mini?Math.floor(H*.055):Math.floor(H*.042);
+    cx.font=`${fs}px serif`;cx.fillText(m.em,m.x-fs*.5,m.y+fs*.4);
+    if(m.mini){cx.font=`bold ${Math.floor(H*.018)}px sans-serif`;cx.fillStyle='#fbbf24';cx.fillText(m.name,m.x-m.name.length*4,m.y-fs*.6);if(m.cursed){cx.fillStyle='#a855f7';cx.fillText('🔮CURSED',m.x-28,m.y-fs*.9);}}
+    let bw=m.mini?72:48;cx.fillStyle='rgba(0,0,0,.65)';cx.fillRect(m.x-bw/2,m.y+8,bw,5);cx.fillStyle=m.mini?'#f59e0b':'#ef4444';cx.fillRect(m.x-bw/2,m.y+8,bw*Math.max(0,m.hp/m.maxHp),5);
+  });
+}
+
+function drawPlayer(){
+  if(G.world==='maze')return;
+  let fs=Math.floor(H*.05);
+  cx.font=`${fs}px serif`;cx.fillText(G.flying?'🪽':'🧙',G.px-fs*.46,G.py+fs*.4);
+  cx.fillStyle='rgba(0,0,0,.6)';cx.fillRect(G.px-24,G.py+10,48,5);cx.fillStyle='#22c55e';cx.fillRect(G.px-24,G.py+10,48*Math.max(0,G.hp/G.maxHp),5);
+  if(G.petName){cx.font=`${Math.floor(fs*.7)}px serif`;cx.fillText(G.secretPetActive?'🔮':'🐉',G.px+fs*.45,G.py);}
+  FAKE_PLAYERS.filter(p=>p.world===G.world).forEach((p,i)=>{
+    let fx=W*.14+((G.tick*.4+i*137)%((W*.72))),fy=H*.34+Math.sin(G.tick*.018+i*2.1)*H*.12;
+    cx.font=`${Math.floor(fs*.65)}px serif`;cx.fillText(p.em,fx,fy);
+    cx.font=`bold ${Math.floor(H*.016)}px sans-serif`;cx.fillStyle='#60a5fa';cx.fillText(p.name,fx-p.name.length*3,fy-10);
+  });
+}
+
+// ── MAIN LOOP ─────────────────────────────────────────────────────────────────
+function loop(){
+  G.tick++;
+  let phase=(G.tick%G.dayLen)/G.dayLen;G.day=phase<0.58;
+  if(G.wasDay&&!G.day)sndNight();G.wasDay=G.day;
+  if(G.secretPetActive&&G.gameOn){secretPetTimer++;if(secretPetTimer>=180){secretPetTimer=0;secretPetTick();}}
+  updatePlayerList();showEventBanner();
+  cx.clearRect(0,0,W,H);
+  if(G.flying)drawSky();
+  else{
+    let evIds=EVENTS.map(e=>e.id);
+    if(G.world==='hub')drawHub();
+    else if(G.world==='dungeon')drawDungeon();
+    else if(G.world==='special')drawSpecial();
+    else if(G.world==='maze')drawMaze();
+    else if(evIds.includes(G.world))drawEventWorld(G.world);
+    else drawHub();
+  }
+  if(G.world!=='maze'){drawMonsters();drawPlayer();}
+  hud();
+  requestAnimationFrame(loop);
+}
+
+// ── START ─────────────────────────────────────────────────────────────────────
+function showStart(){
+  document.getElementById('overlay').style.display='flex';
+  let active=getActiveEvents();
+  let evStr=active.length>0?`<div style="background:rgba(255,160,0,.15);border:1px solid #f59e0b;border-radius:8px;padding:8px 14px;margin-bottom:12px;font-size:12px;color:#fbbf24">🎉 Active Events This Month: ${active.map(e=>e.em+' '+e.name).join(' • ')}</div>`:'';
+  let hasSave=false;try{hasSave=!!localStorage.getItem('msSave');}catch(e){}
+  document.getElementById('oc').innerHTML=`
+    ${evStr}
+    <p style="color:#aaa;font-size:12px;max-width:400px;text-align:center;margin-bottom:14px;line-height:1.8">
+      Fight cursed bosses • Explore worlds • Craft & mine<br>
+      Seasonal events change every month!<br>
+      <span style="color:#fbbf24">Arrow keys/WASD = Move | Space = Attack</span>
+    </p>
+    <button class="obtn" onclick="startGame(false)">▶ New Game</button>
+    ${hasSave?'<button class="obtn" onclick="startGame(true)">📂 Continue</button>':''}
+    <button class="obtn" onclick="showHelp()">📖 How to Play</button>`;
+}
+function showHelp(){
+  document.querySelector('#overlay h1').textContent='📖 How to Play';document.querySelector('#overlay .sub').textContent='';
+  document.getElementById('oc').innerHTML=`
+    <div style="color:#ccc;font-size:12px;max-width:420px;line-height:1.9;text-align:left;margin-bottom:12px">
+      <b style="color:#fbbf24">Events:</b> Each month has unique events — locked outside their month!<br>
+      <b style="color:#fbbf24">Move:</b> Arrow keys, WASD, or D-pad<br>
+      <b style="color:#fbbf24">Attack:</b> Spacebar or Attack button<br>
+      <b style="color:#fbbf24">Magic:</b> Pick element → Magic button<br>
+      <b style="color:#fbbf24">Free Boss:</b> Weaken mini-boss below 40% HP → Free<br>
+      <b style="color:#fbbf24">Wings (F key):</b> Fly between islands — face Eagles!<br>
+      <b style="color:#fbbf24">Maze:</b> Defeat Hub Cyclops → enter Maze → find 🏆<br>
+      <b style="color:#fbbf24">Save:</b> Press 💾Save — reloads from browser<br>
+      <b style="color:#fbbf24">Secret Brainout:</b> Auto-fights for you!
+    </div>
+    <button class="obtn" onclick="showStart()">← Back</button>
+    <button class="obtn" onclick="startGame(false)">▶ Play</button>`;
+}
+function startGame(load){
+  gac();G.gameOn=true;
+  if(load)loadGame();
+  G.px=W/2;G.py=H/2;placeMonsters();
+  document.getElementById('overlay').style.display='none';
+  buildEventButtons();
+  let active=getActiveEvents();
+  if(active.length>0){sndEvent();showMsg(`🎉 ${active.map(e=>e.em+e.name).join(' & ')} active this month!\nCheck the Events panel!`,3500);}
+  else if(load)showMsg('📂 Save loaded! Welcome back!',2500);
+  else showMsg('⚔️ Welcome to Monster Slayer!\nArrow keys/WASD = Move | Space = Attack',3000);
+}
+
+document.addEventListener('keydown',e=>{
+  if(!G.gameOn)return;
+  if(e.key==='ArrowLeft'||e.key==='a')mv(-1,0);if(e.key==='ArrowRight'||e.key==='d')mv(1,0);
+  if(e.key==='ArrowUp'||e.key==='w')mv(0,-1);if(e.key==='ArrowDown'||e.key==='s')mv(0,1);
+  if(e.key===' '){e.preventDefault();doAttack();}if(e.key==='m')doMagic();
+  if(e.key==='f')toggleFly();if(e.key==='Escape')closeOv();
+});
+
+showStart();loop();
+</script>
+</body>
+</html>
