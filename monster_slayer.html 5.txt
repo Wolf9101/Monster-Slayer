@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0">
+<title>Monster Slayer</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0a0a1a;font-family:sans-serif;overflow:hidden;touch-action:none}
+#wrap{width:100vw;height:100vh;position:relative}
+canvas{display:block;position:absolute;top:0;left:0}
+#hud{position:absolute;top:6px;left:6px;right:6px;display:flex;gap:4px;flex-wrap:wrap;pointer-events:none;z-index:5}
+.hb{background:rgba(0,0,0,.85);border:1px solid rgba(255,255,255,.2);border-radius:6px;padding:3px 8px;color:#fff;font-size:11px}
+.hb b{color:#fbbf24}
+#msg{position:absolute;top:35%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,.95);color:#fff;font-size:13px;padding:12px 20px;border-radius:10px;text-align:center;display:none;border:1px solid rgba(255,200,0,.4);max-width:300px;z-index:20;pointer-events:none;white-space:pre-line;line-height:1.6}
+.screen{position:absolute;inset:0;background:rgba(0,0,0,.97);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:30;padding:20px;overflow-y:auto}
+.screen.active{display:flex}
+.screen h1{color:#fbbf24;font-size:24px;margin-bottom:4px;text-align:center;text-shadow:0 0 16px #f59e0b}
+.screen .sub{color:#888;font-size:12px;margin-bottom:14px;text-align:center}
+.btn{display:block;width:100%;max-width:340px;padding:13px;margin:5px auto;border-radius:10px;font-size:15px;cursor:pointer;text-align:center;border:2px solid #fbbf24;background:rgba(255,190,0,.13);color:#fbbf24}
+.btn.green{border-color:#22c55e;color:#22c55e;background:rgba(34,197,94,.1)}
+.btn.red{border-color:#ef4444;color:#ef4444;background:rgba(239,68,68,.1)}
+.btn.grey{border-color:#666;color:#999;background:rgba(100,100,100,.1);font-size:12px}
+.btn.blue{border-color:#60a5fa;color:#60a5fa;background:rgba(96,165,250,.1)}
+.btn.purple{border-color:#a855f7;color:#a855f7;background:rgba(168,85,247,.1)}
+.inp{display:block;width:100%;max-width:340px;padding:12px;margin:5px auto;border-radius:8px;border:2px solid #fbbf24;background:#111;color:#fff;font-size:15px}
+.inp.green{border-color:#22c55e}
+.gbtn{display:block;width:100%;max-width:340px;padding:8px 12px;margin:4px auto;border-radius:7px;border:1px solid #22c55e;background:rgba(34,197,94,.08);color:#22c55e;font-size:12px;cursor:pointer;text-align:left}
+.label{color:#fbbf24;font-size:12px;text-align:center;margin:6px 0 4px}
+.avrow{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-width:340px;margin:0 auto 6px}
+.av{font-size:22px;width:40px;height:40px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.05);cursor:pointer}
+.av.sel{background:rgba(255,255,255,.3);border-color:#fff}
+.colrow{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;max-width:340px;margin:0 auto 10px}
+.col{width:28px;height:28px;border-radius:50%;border:2px solid rgba(255,255,255,.3);cursor:pointer}
+.col.sel{outline:3px solid #fff;outline-offset:2px}
+#evbanner{position:absolute;top:0;left:0;right:0;text-align:center;padding:4px;font-size:12px;font-weight:bold;z-index:6;pointer-events:none;display:none}
+#btns{position:absolute;bottom:6px;left:50%;transform:translateX(-50%);display:flex;gap:4px;z-index:10;flex-wrap:wrap;justify-content:center}
+#btns button{background:rgba(0,0,0,.88);border:1px solid rgba(255,255,255,.22);color:#fff;border-radius:7px;padding:7px 10px;font-size:11px;cursor:pointer}
+#mdpad{position:absolute;bottom:55px;left:50%;transform:translateX(-50%);display:none;grid-template-columns:repeat(3,52px);gap:5px;z-index:10}
+#mdpad button{width:52px;height:52px;font-size:20px;background:rgba(0,0,0,.88);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:10px;cursor:pointer}
+#wdpad{position:absolute;bottom:55px;right:8px;display:grid;grid-template-columns:repeat(3,40px);gap:4px;z-index:10}
+#wdpad button{width:40px;height:40px;font-size:17px;background:rgba(0,0,0,.88);border:1px solid rgba(255,255,255,.22);color:#fff;border-radius:7px;cursor:pointer}
+#wpanel{position:absolute;top:48px;left:8px;z-index:10;display:flex;flex-direction:column;gap:3px}
+#wpanel button{background:rgba(0,0,0,.85);border:1px solid rgba(255,255,255,.2);color:#ccc;border-radius:6px;padding:4px 10px;font-size:10px;cursor:pointer}
+</style>
+</head>
+<body>
+<div id="wrap">
+<canvas id="c"></canvas>
+
+<div id="hud">
+  <div class="hb">❤️<b id="hHp">200/200</b></div>
+  <div class="hb">💎<b id="hDia">0</b></div>
+  <div class="hb">⭐<b id="hXp">0</b></div>
+  <div class="hb">⚔️<b id="hWpn">Fists</b></div>
+  <div class="hb" id="hTod">☀️Day</div>
+  <div class="hb">🌍<b id="hWld">hub</b></div>
+  <div class="hb">🪵<b id="hWd">20</b></div>
+  <div class="hb">🌀Lv<b id="hMz">1</b></div>
+  <div class="hb" style="border-color:#a855f7">👤<b id="hUser">-</b></div>
+  <div class="hb" style="border-color:#60a5fa">👥<b id="hOnline">0</b></div>
+</div>
+
+<div id="evbanner"></div>
+<div id="msg"></div>
+
+<div id="wpanel">
+  <div style="color:#fbbf24;font-size:10px;padding:2px 4px">🌍 WORLDS</div>
+  <button onclick="goWorld('hub')">🏝️ Hub</button>
+  <button onclick="goWorld('dungeon')">🏚️ Dungeon</button>
+  <button onclick="goWorld('special')">🌌 Special</button>
+  <button onclick="goWorld('maze')">🌀 Maze</button>
+  <div style="color:#fbbf24;font-size:10px;padding:4px 4px 2px">🎉 EVENTS</div>
+  <div id="evBtns"></div>
+</div>
+
+<div id="btns">
+  <button onclick="doAtk()">⚔️Attack</button>
+  <button onclick="doMag()">✨Magic</button>
+  <button onclick="doFree()">🔓Free</button>
+  <button onclick="doMine()">⛏️Mine</button>
+  <button onclick="doPlace()">🧱Place</button>
+  <button onclick="showScreen('craft')">⚒️Craft</button>
+  <button onclick="showScreen('shop')">🏪Shop</button>
+  <button onclick="doPvp()">🥊PvP</button>
+  <button onclick="doSave()" style="border-color:#22c55e;color:#22c55e">💾Save</button>
+  <button id="flyBtn" onclick="toggleFly()" style="display:none;border-color:#60a5fa;color:#60a5fa">🪽Fly</button>
+  <button onclick="showScreen('mp')" style="border-color:#a855f7;color:#a855f7">👥MP</button>
+</div>
+
+<div id="mdpad">
+  <div></div><button onclick="mzMv(0,-1)">▲</button><div></div>
+  <button onclick="mzMv(-1,0)">◀</button>
+  <button onclick="doAtk()" style="background:rgba(180,0,0,.6);font-size:13px">⚔️</button>
+  <button onclick="mzMv(1,0)">▶</button>
+  <div></div><button onclick="mzMv(0,1)">▼</button><div></div>
+</div>
+
+<div id="wdpad">
+  <div></div><button onclick="wMv(0,-1)">▲</button><div></div>
+  <button onclick="wMv(-1,0)">◀</button><div></div><button onclick="wMv(1,0)">▶</button>
+  <div></div><button onclick="wMv(0,1)">▼</button><div></div>
+</div>
+
+<!-- LOGIN -->
+<div id="sc-login" class="screen active">
+  <h1>⚔️ MONSTER SLAYER</h1>
+  <div class="sub">By Chan · Jacob · Soyool · Donald 🎮</div>
+  <input class="inp" id="logName" placeholder="Username" autocomplete="off">
+  <input class="inp" id="logPwd" type="password" placeholder="Password">
+  <button class="btn" onclick="loginUser()">🔑 Log In</button>
+  <button class="btn green" onclick="showScreen('register')">✨ Create Account</button>
+  <button class="btn grey" onclick="guestPlay()">👤 Play as Guest</button>
+</div>
+
+<!-- REGISTER -->
+<div id="sc-register" class="screen">
+  <h1>✨ Create Account</h1>
+  <div class="sub">Pick your look then sign up!</div>
+  <div class="label">Choose your avatar:</div>
+  <div class="avrow" id="avPicker"></div>
+  <div class="label">Choose your colour:</div>
+  <div class="colrow" id="colPicker"></div>
+  <input class="inp green" id="regName" placeholder="Username (2–16 chars)" autocomplete="off">
+  <input class="inp green" id="regPwd" type="password" placeholder="Password (3+ chars)">
+  <input class="inp green" id="regPwd2" type="password" placeholder="Confirm Password">
+  <button class="btn green" onclick="registerUser()">✅ Create Account</button>
+  <button class="btn red" onclick="showScreen('login')">← Back</button>
+</div>
+
+<!-- START -->
+<div id="sc-start" class="screen">
+  <h1>⚔️ MONSTER SLAYER</h1>
+  <div class="sub" id="startSub">By Chan · Jacob · Soyool · Donald 🎮</div>
+  <div id="evAlert"></div>
+  <p style="color:#aaa;font-size:12px;text-align:center;margin-bottom:14px;line-height:1.8;max-width:320px">
+    Fight bosses • Explore worlds • Craft and mine<br>
+    Beat the Spooky Maze to win 10,000 💎!<br>
+    <span style="color:#fbbf24">Arrows or WASD = Move | Space = Attack</span>
+  </p>
+  <button class="btn" onclick="startGame()">▶ Start Game</button>
+  <button class="btn green" onclick="showScreen('help')">📖 How to Play</button>
+  <button class="btn blue" onclick="showScreen('mp')">👥 Multiplayer Setup</button>
+  <button class="btn grey" onclick="showScreen('login')">🔄 Switch Account</button>
+</div>
+
+<!-- HELP -->
+<div id="sc-help" class="screen">
+  <h1>📖 How to Play</h1>
+  <div class="sub"></div>
+  <div style="color:#ccc;font-size:13px;max-width:360px;line-height:2.1;text-align:left;margin-bottom:14px">
+    <b style="color:#fbbf24">Move:</b> Arrow keys, WASD, or on-screen buttons<br>
+    <b style="color:#fbbf24">Attack:</b> Space or ⚔️ button<br>
+    <b style="color:#fbbf24">Magic:</b> Tap ✨Magic to cycle elements<br>
+    <b style="color:#fbbf24">Maze:</b> Defeat Hub Cyclops → enter Maze<br>
+    <b style="color:#fbbf24">Maze goal:</b> 👺 fight → 🔴 fight → 🏆 win!<br>
+    <b style="color:#fbbf24">Wings:</b> Craft wings → tap 🪽Fly → fight eagles!<br>
+    <b style="color:#fbbf24">Multiplayer:</b> Tap 👥MP → enter Firebase URL<br>
+    <b style="color:#fbbf24">Die:</b> Lose 50% of your diamonds!
+  </div>
+  <button class="btn" onclick="showScreen('start')">← Back</button>
+  <button class="btn green" onclick="startGame()">▶ Play Now</button>
+  <button class="btn red" onclick="logoutUser()">🚪 Log Out</button>
+</div>
+
+<!-- CRAFT -->
+<div id="sc-craft" class="screen">
+  <h1>⚒️ Crafting</h1>
+  <div class="sub" id="craftSub"></div>
+  <button class="gbtn" onclick="craft('bed')">🛏️ Bed — 5 wood (skip night)</button>
+  <button class="gbtn" onclick="craft('wing')">🪽 Wings — 10 wood + 5💎 (fly!)</button>
+  <button class="gbtn" onclick="craft('wsw')">🗡️ Wood Sword — 3 wood (30 dmg)</button>
+  <button class="gbtn" onclick="craft('isw')">⚔️ Iron Sword — 8 wood + 2💎 (80 dmg)</button>
+  <button class="gbtn" onclick="craft('dsw')">💠 Diamond Sword — 15💎 (150 dmg)</button>
+  <button class="gbtn" onclick="enableTilt()">📱 Enable Tilt Controls (maze)</button>
+  <button class="btn red" onclick="closeScreen()">✕ Close</button>
+</div>
+
+<!-- SHOP -->
+<div id="sc-shop" class="screen">
+  <h1>🏪 Shop</h1>
+  <div class="sub" id="shopSub"></div>
+  <button class="gbtn" onclick="buy('wsw')">🗡️ Wood Sword — 5💎 (30 dmg)</button>
+  <button class="gbtn" onclick="buy('isw')">⚔️ Iron Sword — 20💎 (80 dmg)</button>
+  <button class="gbtn" onclick="buy('brn')">🐉 Italian Brainout — 40💎 (+20 dmg)</button>
+  <button class="gbtn" onclick="buy('tll')">🌟 Tra La Laro — 100💎 (3×HP +70 dmg)</button>
+  <button class="gbtn" onclick="buy('sec')">🔮 Secret Brainout — 233,332,334💎</button>
+  <button class="btn red" onclick="closeScreen()">✕ Close</button>
+</div>
+
+<!-- SECRET BRAINOUT -->
+<div id="sc-secret" class="screen">
+  <h1>🔮 Secret Brainout</h1>
+  <div class="sub">Choose its elemental power!</div>
+  <p style="color:#aaa;font-size:12px;text-align:center;margin-bottom:14px">Auto-attacks every 3 seconds!<br>190 dmg to weak enemies, 70 to others.</p>
+  <button class="gbtn" onclick="setSec('fire')">🔥 Fire — 190 dmg to water enemies</button>
+  <button class="gbtn" onclick="setSec('water')">💧 Water — 190 dmg to fire enemies</button>
+  <button class="gbtn" onclick="setSec('earth')">🌎 Earth — 190 dmg to air enemies</button>
+  <button class="btn red" onclick="closeScreen()">✕ Cancel</button>
+</div>
+
+<!-- WIN -->
+<div id="sc-win" class="screen">
+  <h1>🏆 YOU WIN!</h1>
+  <div class="sub" id="winSub"></div>
+  <div style="font-size:64px;text-align:center;margin:10px">🏆🎉🏆</div>
+  <p style="color:#22c55e;font-size:16px;text-align:center;font-weight:bold;margin-bottom:8px">YOU ESCAPED THE MAZE!</p>
+  <p style="color:#fbbf24;font-size:13px;text-align:center;margin-bottom:16px" id="winInfo"></p>
+  <button class="btn" onclick="nextMaze()">▶ Next Maze</button>
+  <button class="btn red" onclick="closeScreen();goWorld('hub')">🏝️ Return to Hub</button>
+</div>
+
+<!-- MULTIPLAYER -->
+<div id="sc-mp" class="screen">
+  <h1>👥 Multiplayer</h1>
+  <div class="sub">Play with other players online!</div>
+  <p style="color:#aaa;font-size:12px;text-align:center;margin-bottom:14px;max-width:340px;line-height:1.9">
+    You need a free Firebase Realtime Database.<br>
+    <b style="color:#fbbf24">1.</b> Go to <b style="color:#60a5fa">console.firebase.google.com</b><br>
+    <b style="color:#fbbf24">2.</b> Create project → Build → Realtime Database<br>
+    <b style="color:#fbbf24">3.</b> Create database → Start in test mode<br>
+    <b style="color:#fbbf24">4.</b> Copy the URL and paste it below<br>
+    <b style="color:#fbbf24">5.</b> Share the same URL with your friends!
+  </p>
+  <input class="inp" id="fbUrlIn" placeholder="https://your-project-rtdb.firebaseio.com" style="font-size:11px">
+  <button class="btn blue" onclick="connectFb()">✅ Connect to Multiplayer</button>
+  <button class="btn red" onclick="disconnectFb()">❌ Disconnect</button>
+  <div id="mpStatus" style="color:#888;font-size:12px;text-align:center;margin:8px 0;max-width:340px"></div>
+  <div id="mpPlayerList" style="color:#ccc;font-size:11px;text-align:center;margin-bottom:8px;max-width:340px"></div>
+  <button class="btn" onclick="closeScreen()">← Back</button>
+</div>
+
+</div>
+<script>
+// ── CANVAS ────────────────────────────────────────────────────────────────────
+var cv=document.getElementById('c'),cx=cv.getContext('2d');
+var W=0,H=0;
+function rsz(){W=cv.width=window.innerWidth;H=cv.height=window.innerHeight;}
+rsz();window.addEventListener('resize',rsz);
+
+// ── SCREEN MANAGER ────────────────────────────────────────────────────────────
+function showScreen(id){
+  var all=document.querySelectorAll('.screen');
+  for(var i=0;i<all.length;i++)all[i].classList.remove('active');
+  var el=document.getElementById('sc-'+id);
+  if(el)el.classList.add('active');
+  if(id==='craft'){var e=document.getElementById('craftSub');if(e)e.textContent='Wood: '+G.wood+' | 💎: '+G.dia;}
+  if(id==='shop'){var e=document.getElementById('shopSub');if(e)e.textContent='Your 💎: '+numFmt(G.dia);}
+  if(id==='start'){
+    var sub=document.getElementById('startSub');
+    if(sub)sub.textContent=G.username?'Welcome back, '+G.avatar+' '+G.username+'!':'By Chan · Jacob · Soyool · Donald 🎮';
+    var act=activeEvts();
+    var ea=document.getElementById('evAlert');
+    if(ea)ea.innerHTML=act.length?'<div style="background:rgba(255,160,0,.15);border:1px solid #f59e0b;border-radius:8px;padding:8px;font-size:12px;color:#fbbf24;text-align:center;margin-bottom:10px;max-width:340px">🎉 Active this month: '+act.map(function(e){return e.em+' '+e.name;}).join(' • ')+'</div>':'';
+  }
+  if(id==='mp'){
+    var el2=document.getElementById('fbUrlIn');if(el2&&FB_URL)el2.value=FB_URL;
+    updateMpUI();
+  }
+}
+function closeScreen(){showScreen('start');}
+function numFmt(n){return(n||0).toLocaleString();}
+
+// ── AUDIO ─────────────────────────────────────────────────────────────────────
+var AC=null;
+function gac(){
+  try{
+    if(!AC)AC=new(window.AudioContext||window.webkitAudioContext)();
+    if(AC.state==='suspended')AC.resume();
+  }catch(e){}
+  return AC;
+}
+function beep(f,t,d,v,dl){
+  try{
+    var ac=gac();if(!ac)return;
+    var o=ac.createOscillator(),g=ac.createGain();
+    o.connect(g);g.connect(ac.destination);
+    o.type=t||'sine';o.frequency.value=f||440;
+    var s=ac.currentTime+(dl||0);
+    g.gain.setValueAtTime(v||.15,s);
+    g.gain.exponentialRampToValueAtTime(.001,s+(d||.2));
+    o.start(s);o.stop(s+(d||.2)+.02);
+  }catch(e){}
+}
+function sAtk(){beep(220,'sawtooth',.08,.22);beep(160,'sawtooth',.1,.16,.07);}
+function sHit(){beep(110,'square',.15,.28);}
+function sDie(){var ff=[300,240,180,120,80];for(var i=0;i<ff.length;i++)beep(ff[i],'sawtooth',.18,.25,i*.1);}
+function sGem(){var ff=[523,659,784,1047];for(var i=0;i<ff.length;i++)beep(ff[i],'sine',.16,.2,i*.09);}
+function sKill(){var ff=[440,550,660];for(var i=0;i<ff.length;i++)beep(ff[i],'triangle',.16,.22,i*.08);}
+function sMag(t){var mm={fire:[200,400,600],water:[350,500,700],earth:[100,200,300],air:[600,900,1200]};var ff=mm[t]||[440];for(var i=0;i<ff.length;i++)beep(ff[i],'sine',.13,.18,i*.07);}
+function sCraft(){var ff=[330,440,550];for(var i=0;i<ff.length;i++)beep(ff[i],'triangle',.1,.16,i*.08);}
+function sBuy(){var ff=[440,660,880];for(var i=0;i<ff.length;i++)beep(ff[i],'sine',.13,.18,i*.08);}
+function sWin(){var ff=[523,587,659,784,880,1047];for(var i=0;i<ff.length;i++)beep(ff[i],'sine',.28,.22,i*.1);}
+function sNight(){beep(180,'sine',.5,.12);beep(140,'sine',.5,.1,.25);}
+function sSave(){beep(523,'sine',.15,.18);beep(784,'sine',.15,.18,.15);}
+function sMzMv(){beep(200,'sine',.06,.13);}
+function sTrap(){beep(150,'sawtooth',.2,.28);beep(100,'sawtooth',.18,.22,.12);}
+
+// ── ACCOUNTS ─────────────────────────────────────────────────────────────────
+var AV_EMS=['🧙','⚔️','🛡️','🏹','🧝','🧟','🧛','🦸','🐱','🦊','🐺','🐲','🦅','👾','🤖','👻','🐸','🧿','🦁','🐯'];
+var AV_COLS=['#22c55e','#3b82f6','#ef4444','#f59e0b','#a855f7','#ec4899','#14b8a6','#f97316','#ffffff','#fbbf24'];
+
+function getAccs(){try{return JSON.parse(localStorage.getItem('ms_accs')||'{}');}catch(e){return{};}}
+function setAccs(a){try{localStorage.setItem('ms_accs',JSON.stringify(a));}catch(e){}}
+function getCurUser(){try{return JSON.parse(localStorage.getItem('ms_cur')||'null');}catch(e){return null;}}
+function setCurUser(u){try{localStorage.setItem('ms_cur',JSON.stringify(u));}catch(e){}}
+
+function buildPickers(){
+  var ap=document.getElementById('avPicker');
+  var cp=document.getElementById('colPicker');
+  if(!ap||!cp)return;
+  ap.innerHTML='';cp.innerHTML='';
+  for(var i=0;i<AV_EMS.length;i++){
+    (function(em){
+      var b=document.createElement('button');
+      b.className='av'+(em===G.avatar?' sel':'');
+      b.textContent=em;
+      b.onclick=function(){
+        G.avatar=em;
+        var all=document.querySelectorAll('.av');
+        for(var j=0;j<all.length;j++)all[j].classList.toggle('sel',all[j].textContent===em);
+      };
+      ap.appendChild(b);
+    })(AV_EMS[i]);
+  }
+  for(var i=0;i<AV_COLS.length;i++){
+    (function(col){
+      var b=document.createElement('button');
+      b.className='col'+(col===G.avatarColor?' sel':'');
+      b.style.background=col;
+      b.onclick=function(){
+        G.avatarColor=col;
+        var all=document.querySelectorAll('.col');
+        for(var j=0;j<all.length;j++)all[j].classList.toggle('sel',all[j].style.background===col);
+      };
+      cp.appendChild(b);
+    })(AV_COLS[i]);
+  }
+}
+
+function loginUser(){
+  gac();
+  var uname=(document.getElementById('logName').value||'').trim();
+  var pwd=document.getElementById('logPwd').value||'';
+  if(!uname||!pwd){alert('Please enter username and password.');return;}
+  var accs=getAccs(),key=uname.toLowerCase(),acc=accs[key];
+  if(!acc){alert('Account not found! Check your username.');return;}
+  if(acc.pwd!==pwd){alert('Wrong password!');return;}
+  setCurUser({username:acc.username,avatar:acc.avatar,color:acc.color});
+  G.username=acc.username;G.avatar=acc.avatar||'🧙';G.avatarColor=acc.color||'#22c55e';
+  G.dia=acc.dia||0;G.xp=acc.xp||0;G.wpn=acc.wpn||'Fists';G.dmg=acc.dmg||20;G.mzLv=acc.mzLv||1;
+  showScreen('start');
+}
+function registerUser(){
+  gac();
+  var uname=(document.getElementById('regName').value||'').trim();
+  var pwd=document.getElementById('regPwd').value||'';
+  var pwd2=document.getElementById('regPwd2').value||'';
+  if(!uname||uname.length<2){alert('Username must be at least 2 characters!');return;}
+  if(uname.length>16){alert('Username must be 16 characters or less!');return;}
+  if(!pwd||pwd.length<3){alert('Password must be at least 3 characters!');return;}
+  if(pwd!==pwd2){alert('Passwords do not match!');return;}
+  var accs=getAccs(),key=uname.toLowerCase();
+  if(accs[key]){alert('Username taken! Try another.');return;}
+  accs[key]={username:uname,pwd:pwd,avatar:G.avatar,color:G.avatarColor,dia:0,xp:0,wpn:'Fists',dmg:20,mzLv:1};
+  setAccs(accs);
+  setCurUser({username:uname,avatar:G.avatar,color:G.avatarColor});
+  G.username=uname;
+  showScreen('start');
+}
+function guestPlay(){gac();G.username='Guest';G.avatar='🧙';G.avatarColor='#22c55e';showScreen('start');}
+function logoutUser(){setCurUser(null);G.username='';G.avatar='🧙';G.avatarColor='#22c55e';mpRemove();showScreen('login');}
+function saveUserData(){
+  if(!G.username||G.username==='Guest')return;
+  var accs=getAccs(),key=G.username.toLowerCase();
+  if(!accs[key])return;
+  accs[key].dia=G.dia;accs[key].xp=G.xp;accs[key].wpn=G.wpn;accs[key].dmg=G.dmg;accs[key].mzLv=G.mzLv;
+  setAccs(accs);
+}
+
+// ── MULTIPLAYER ───────────────────────────────────────────────────────────────
+var FB_URL='';
+var ONLINE_PLAYERS=[];
+var mpTick=0;
+
+function loadFbUrl(){
+  try{var u=localStorage.getItem('ms_fb');if(u)FB_URL=u;}catch(e){}
+}
+function connectFb(){
+  var u=(document.getElementById('fbUrlIn').value||'').trim().replace(/\/+$/,'');
+  if(!u){alert('Please paste your Firebase URL!');return;}
+  if(u.indexOf('firebaseio.com')<0&&u.indexOf('firebasedatabase.app')<0){
+    alert('That does not look like a Firebase URL.\nIt should end in .firebaseio.com or .firebasedatabase.app');return;
+  }
+  FB_URL=u;
+  try{localStorage.setItem('ms_fb',u);}catch(e){}
+  // Test connection
+  fetch(u+'/ms_test.json',{method:'PUT',body:'"ok"'})
+    .then(function(){
+      updateMpUI();
+      showMsg('👥 Multiplayer connected!\nOther players will appear in game!',3000);
+    })
+    .catch(function(){
+      alert('Could not connect to Firebase.\nCheck the URL and make sure your database is in test mode.');
+    });
+}
+function disconnectFb(){
+  mpRemove();
+  FB_URL='';
+  try{localStorage.removeItem('ms_fb');}catch(e){}
+  ONLINE_PLAYERS=[];
+  updateMpUI();
+  var el=document.getElementById('hOnline');if(el)el.textContent='0';
+  showMsg('Multiplayer disconnected.',2000);
+}
+function updateMpUI(){
+  var st=document.getElementById('mpStatus');
+  var pl=document.getElementById('mpPlayerList');
+  if(st){
+    st.textContent=FB_URL?'🟢 Connected: '+FB_URL.replace('https://','').substring(0,35)+'...':'⚪ Not connected. Enter your Firebase URL above.';
+    st.style.color=FB_URL?'#22c55e':'#888';
+  }
+  if(pl&&ONLINE_PLAYERS.length){
+    var html='<b style="color:#60a5fa">Online now:</b> ';
+    html+=ONLINE_PLAYERS.map(function(p){return p.av+' '+p.u;}).join(', ');
+    pl.innerHTML=html;
+  } else if(pl){
+    pl.innerHTML=FB_URL?'<span style="color:#666">No other players online yet.</span>':'';
+  }
+}
+
+function mpWrite(){
+  if(!FB_URL||!G.username||!G.on)return;
+  var key=G.username.replace(/[^a-zA-Z0-9]/g,'_');
+  var data=JSON.stringify({
+    u:G.username,av:G.avatar,col:G.avatarColor,
+    w:G.world,x:Math.round(G.px),y:Math.round(G.py),
+    hp:G.hp,mhp:G.mhp,ts:Date.now()
+  });
+  fetch(FB_URL+'/ms_players/'+key+'.json',{method:'PUT',body:data}).catch(function(){});
+}
+
+function mpRead(){
+  if(!FB_URL||!G.on)return;
+  fetch(FB_URL+'/ms_players.json')
+    .then(function(r){return r.json();})
+    .then(function(data){
+      if(!data){ONLINE_PLAYERS=[];return;}
+      var now=Date.now(),list=[];
+      for(var k in data){
+        var p=data[k];
+        if(!p||!p.u)continue;
+        if(p.u===G.username)continue;
+        if(now-p.ts>25000)continue;
+        list.push(p);
+      }
+      ONLINE_PLAYERS=list;
+      var el=document.getElementById('hOnline');
+      if(el)el.textContent=list.length;
+    })
+    .catch(function(){});
+}
+
+function mpRemove(){
+  if(!FB_URL||!G.username||G.username==='Guest')return;
+  var key=G.username.replace(/[^a-zA-Z0-9]/g,'_');
+  fetch(FB_URL+'/ms_players/'+key+'.json',{method:'DELETE'}).catch(function(){});
+}
+window.addEventListener('beforeunload',function(){mpRemove();});
+
+// ── EVENTS ────────────────────────────────────────────────────────────────────
+var EVTS=[
+  {id:'christmas',name:'Christmas',em:'🎄',months:[11],col:'#c0392b',reward:3000},
+  {id:'newyear',name:'New Year',em:'🎆',months:[0],col:'#ffd700',reward:5000},
+  {id:'valentine',name:"Valentine's",em:'💝',months:[1],col:'#e91e63',reward:1500},
+  {id:'stpatrick',name:"St Patrick's",em:'🍀',months:[2],col:'#2ecc71',reward:2000},
+  {id:'easter',name:'Easter',em:'🐣',months:[3],col:'#ff9800',reward:2500},
+  {id:'summer',name:'Summer',em:'🌊',months:[5,6,7],col:'#03a9f4',reward:1800},
+  {id:'halloween',name:'Halloween',em:'🎃',months:[9],col:'#f97316',reward:2500},
+  {id:'thanksgiving',name:'Thanksgiving',em:'🦃',months:[10],col:'#d4a057',reward:2200},
+  {id:'lunar',name:'Lunar New Year',em:'🏮',months:[1],col:'#ff3d00',reward:4000},
+  {id:'school',name:'Back to School',em:'📚',months:[8],col:'#9c27b0',reward:1200},
+];
+var CUR_MONTH=new Date().getMonth();
+function activeEvts(){return EVTS.filter(function(e){return e.months.indexOf(CUR_MONTH)>=0;});}
+function evActive(id){return activeEvts().some(function(e){return e.id===id;});}
+function buildEvBtns(){
+  var mn=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var h='';
+  for(var i=0;i<EVTS.length;i++){
+    var e=EVTS[i],act=evActive(e.id);
+    var when=e.months.map(function(m){return mn[m];}).join('/');
+    if(act){h+='<button style="background:rgba(0,0,0,.85);border:1px solid '+e.col+';color:'+e.col+';border-radius:6px;padding:4px 10px;font-size:10px;cursor:pointer;margin-bottom:3px;display:block" onclick="goWorld(\''+e.id+'\')">'+e.em+' '+e.name+' ✅</button>';}
+    else{h+='<button style="opacity:.4;background:rgba(0,0,0,.85);border:1px solid #555;color:#888;border-radius:6px;padding:4px 10px;font-size:10px;cursor:pointer;margin-bottom:3px;display:block" onclick="showMsg(\'❌ '+e.name+' only in '+when+'!\',2500)">'+e.em+' '+e.name+' 🔒</button>';}
+  }
+  var eb=document.getElementById('evBtns');if(eb)eb.innerHTML=h;
+}
+function showEvBanner(){
+  var act=activeEvts(),el=document.getElementById('evbanner');
+  if(!el)return;
+  if(!act.length){el.style.display='none';return;}
+  el.style.display='block';
+  var ev=act[Math.floor(Date.now()/4000)%act.length];
+  el.style.background=ev.col+'cc';el.style.color='#fff';
+  el.textContent=ev.em+' '+ev.name.toUpperCase()+' EVENT ACTIVE THIS MONTH!';
+}
+
+// ── GAME STATE ────────────────────────────────────────────────────────────────
+var G={
+  hp:200,mhp:200,dia:0,xp:0,dmg:20,wpn:'Fists',
+  wood:20,mined:0,bed:false,wings:false,
+  pet:'',pdmg:0,spp:'',spa:false,
+  tick:0,day:true,wday:true,dlen:600,
+  px:0,py:0,world:'hub',
+  mzX:1,mzY:1,mzLv:1,mzClr:0,
+  mzMR:3,mzMC:3,mzMA:true,mzMHp:3000,
+  mzBA:true,mzBHp:5000,mzWon:false,
+  pvpW:0,on:false,magic:'none',
+  username:'',avatar:'🧙',avatarColor:'#22c55e',
+  flying:false
+};
+
+// ── MAZE ─────────────────────────────────────────────────────────────────────
+var MG=[],MS=9;
+function mzSz(){return Math.min(21,9+(G.mzLv-1)*4);}
+function mzOdd(n){return n%2===0?n+1:n;}
+function buildMaze(){
+  MS=mzOdd(mzSz());
+  MG=[];
+  var r,c;
+  for(r=0;r<MS;r++){MG[r]=[];for(c=0;c<MS;c++)MG[r][c]=1;}
+  MG[1][1]=0;
+  var stack=[[1,1]],dirs=[[0,2],[2,0],[0,-2],[-2,0]];
+  while(stack.length>0){
+    var cur=stack[stack.length-1],cr=cur[0],cc=cur[1];
+    var sd=dirs.slice().sort(function(){return Math.random()-.5;}),moved=false;
+    for(var d=0;d<sd.length;d++){
+      var nr=cr+sd[d][0],nc=cc+sd[d][1];
+      if(nr>0&&nr<MS-1&&nc>0&&nc<MS-1&&MG[nr][nc]===1){
+        MG[cr+Math.round(sd[d][0]/2)][cc+Math.round(sd[d][1]/2)]=0;
+        MG[nr][nc]=0;stack.push([nr,nc]);moved=true;break;
+      }
+    }
+    if(!moved)stack.pop();
+  }
+  // BFS guarantee path
+  (function(){
+    var vis=[],prev=[];
+    for(var i=0;i<MS;i++){vis[i]=[];prev[i]=[];for(var j=0;j<MS;j++){vis[i][j]=false;prev[i][j]=null;}}
+    var q=[[1,1]];vis[1][1]=true;
+    while(q.length){
+      var p=q.shift(),pr=p[0],pc=p[1];
+      if(pr===MS-2&&pc===MS-2){var c2=[pr,pc];while(c2){MG[c2[0]][c2[1]]=0;c2=prev[c2[0]][c2[1]];}return;}
+      var dd=[[0,1],[1,0],[0,-1],[-1,0]];
+      for(var i=0;i<dd.length;i++){
+        var nr=pr+dd[i][0],nc=pc+dd[i][1];
+        if(nr>=0&&nr<MS&&nc>=0&&nc<MS&&!vis[nr][nc]){vis[nr][nc]=true;prev[nr][nc]=[pr,pc];q.push([nr,nc]);}
+      }
+    }
+    // fallback: open a straight path
+    for(var i=1;i<MS-1;i++){MG[1][i]=0;MG[i][MS-2]=0;}
+  })();
+  MG[MS-2][MS-2]=2;
+  // Traps level 2+
+  if(G.mzLv>=2){
+    for(var t=0;t<G.mzLv*2;t++){
+      var tr=2+Math.floor(Math.random()*(MS-4)),tc=2+Math.floor(Math.random()*(MS-4));
+      if(MG[tr][tc]===0&&!(tr===MS-2&&tc===MS-2))MG[tr][tc]=3;
+    }
+  }
+  // Miniture near center
+  var mid=Math.floor(MS/2),placed=false;
+  for(var dist=0;dist<MS&&!placed;dist++){
+    for(var dr=-dist;dr<=dist&&!placed;dr++){
+      for(var dc=-dist;dc<=dist&&!placed;dc++){
+        var mr=mid+dr,mc=mid+dc;
+        if(mr>0&&mr<MS-1&&mc>0&&mc<MS-1&&MG[mr][mc]===0&&!(mr===1&&mc===1)&&!(mr===MS-2&&mc===MS-2)){G.mzMR=mr;G.mzMC=mc;placed=true;}
+      }
+    }
+  }
+  G.mzMA=true;G.mzMHp=3000+G.mzLv*500;
+  G.mzBA=true;G.mzBHp=5000+G.mzLv*1000;
+  G.mzX=1;G.mzY=1;G.mzWon=false;
+}
+
+// ── MONSTERS ─────────────────────────────────────────────────────────────────
+function mk(id,n,hp,xp,dmg,em,mini,type,csd,world){return{id:id,n:n,x:0,y:0,hp:hp,mhp:hp,xp:xp,dmg:dmg,em:em,mini:mini,type:type,csd:csd,world:world,alive:true};}
+var MONS=[
+  mk(1,'Screaming Doodle',200,60,30,'👾',false,'normal',false,'hub'),
+  mk(2,'Dungeon Fox Pack',350,150,35,'🦊',false,'normal',false,'hub'),
+  mk(3,'Cyclops',600,400,80,'🧿',true,'normal',true,'hub'),
+  mk(4,'Egyptian Cat',500,300,55,'🐱',true,'water',true,'hub'),
+  mk(5,'Green Croc',400,250,45,'🐊',false,'earth',false,'hub'),
+  mk(6,'Purple Ghost',300,180,40,'👻',false,'air',false,'hub'),
+  mk(7,'Evil Pyramid',1400,800,120,'🔺',true,'earth',true,'dungeon'),
+  mk(8,'Stone Serpent',2500,1200,140,'🐍',true,'normal',true,'dungeon'),
+  mk(9,'Lava Beast',1800,600,160,'🔥',false,'fire',false,'dungeon'),
+  mk(10,'Iron Golem',3000,1500,200,'🗿',true,'earth',true,'dungeon'),
+  mk(11,'Dungeon Dragon',5000,2000,180,'🐲',true,'fire',true,'dungeon'),
+  mk(12,'Snowman',50,20,60,'☃️',false,'water',false,'special'),
+  mk(13,'Gold Rock',500,150,100,'🪨',false,'earth',false,'special'),
+  mk(14,'Moon Spirit',344,120,80,'🌕',false,'air',false,'special'),
+  mk(15,'Santa Boss',5000,3000,120,'🎅',true,'water',false,'christmas'),
+  mk(16,'Jack O Boss',4000,2500,110,'🎃',true,'fire',false,'halloween'),
+  mk(17,'Firework Boss',6000,5000,130,'🎆',true,'fire',false,'newyear'),
+  mk(18,'Cupid Boss',4000,1500,100,'💘',true,'air',false,'valentine'),
+  mk(19,'Leprechaun Boss',4500,2000,110,'🍀',true,'earth',false,'stpatrick'),
+  mk(20,'Easter Bunny',4000,2500,105,'🐰',true,'normal',false,'easter'),
+  mk(21,'Beach Monster',5000,1800,120,'🦀',true,'water',false,'summer'),
+  mk(22,'Turkey Boss',5000,2200,115,'🦃',true,'normal',false,'thanksgiving'),
+  mk(23,'Lunar Dragon',8000,4000,150,'🐉',true,'fire',false,'lunar'),
+  mk(24,'Brain Boss',3500,1200,100,'🧠',true,'air',false,'school'),
+  mk(99,'Monster Eagle',90000,8000,150,'🦅',false,'air',false,'sky'),
+];
+function placeMons(){for(var i=0;i<MONS.length;i++){var m=MONS[i];m.x=W*.18+Math.random()*(W*.64);m.y=H*.28+Math.random()*(H*.34);}}
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+var msgT=null;
+function showMsg(t,ms){var el=document.getElementById('msg');if(!el)return;el.textContent=t;el.style.display='block';clearTimeout(msgT);msgT=setTimeout(function(){el.style.display='none';},ms||2800);}
+function hud(){
+  document.getElementById('hHp').textContent=G.hp+'/'+G.mhp;
+  document.getElementById('hDia').textContent=numFmt(G.dia);
+  document.getElementById('hXp').textContent=G.xp;
+  document.getElementById('hWpn').textContent=G.wpn;
+  document.getElementById('hTod').textContent=G.day?'☀️Day':'🌙Night';
+  document.getElementById('hWld').textContent=G.world;
+  document.getElementById('hWd').textContent=G.wood;
+  document.getElementById('hMz').textContent=G.mzLv;
+  document.getElementById('hUser').textContent=(G.avatar||'🧙')+(G.username?G.username:'');
+  var inMaze=G.world==='maze';
+  document.getElementById('mdpad').style.display=inMaze?'grid':'none';
+  document.getElementById('wdpad').style.display=inMaze?'none':'grid';
+  var fb=document.getElementById('flyBtn');if(fb)fb.style.display=G.wings?'':'none';
+}
+function diaRoll(){if(Math.random()<.0123){G.dia++;sGem();return'\n💎 Found a Diamond!';}return'';}
+function nearest(){
+  var best=null,bd=9999;
+  for(var i=0;i<MONS.length;i++){var m=MONS[i];if(!m.alive||m.world!==G.world||m.id===99)continue;var d=Math.hypot(m.x-G.px,m.y-G.py);if(d<bd){bd=d;best=m;}}
+  return bd<Math.min(W,H)*.4?best:null;
+}
+function mgDmg(magic,type){var w={fire:'water',air:'earth',earth:'air',water:'fire'};if(w[magic]===type)return 50;if(magic==='earth')return 40;return 30;}
+function killMon(m){
+  m.alive=false;G.xp+=m.xp;sKill();
+  var ev=null;for(var i=0;i<EVTS.length;i++)if(EVTS[i].id===m.world){ev=EVTS[i];break;}
+  var bon=0;if(ev&&m.mini){bon=ev.reward;G.dia+=bon;}
+  var ex=diaRoll();
+  showMsg(m.mini?'✅ '+m.n+' defeated!\n+'+m.xp+' XP'+ex+(bon>0?'\n🎉 +'+bon+' 💎!':''):m.em+' '+m.n+' +'+m.xp+' XP'+ex,3000);
+  (function(mon){setTimeout(function(){mon.hp=mon.mhp;mon.alive=true;mon.x=W*.18+Math.random()*(W*.64);mon.y=H*.28+Math.random()*(H*.34);},12000);})(m);
+  hud();
+}
+function die(){sDie();G.flying=false;var lost=Math.floor(G.dia*.5);G.dia=Math.max(0,G.dia-lost);G.hp=G.mhp;showMsg('💀 You died!\nLost '+lost+' 💎.\nRespawning...',3500);hud();}
+function doSave(){gac();saveUserData();try{localStorage.setItem('ms_gs',JSON.stringify({hp:G.hp,mhp:G.mhp,dia:G.dia,xp:G.xp,dmg:G.dmg,wpn:G.wpn,wood:G.wood,bed:G.bed,wings:G.wings,mzLv:G.mzLv}));sSave();showMsg('💾 Saved!',2000);}catch(e){showMsg('❌ Could not save.',2000);}}
+
+// ── FLYING ────────────────────────────────────────────────────────────────────
+function toggleFly(){
+  if(!G.wings){showMsg('Craft wings first!\n⚒️ Craft → 🪽 Wings (10 wood + 5💎)');return;}
+  G.flying=!G.flying;
+  if(G.flying){
+    beep(400,'sine',.2,.18);beep(700,'sine',.2,.15,.1);beep(1000,'sine',.2,.12,.2);
+    var eagle=null;for(var i=0;i<MONS.length;i++)if(MONS[i].id===99){eagle=MONS[i];break;}
+    if(eagle){eagle.alive=true;eagle.hp=eagle.mhp;eagle.x=W*.7;eagle.y=H*.3;}
+    showMsg('🪽 You are FLYING!\nMonster Eagle incoming!\nTap ⚔️ Attack to fight it!',3500);
+  } else {
+    showMsg('🪽 Landed safely!');
+  }
+  hud();
+}
+
+// ── ACTIONS ───────────────────────────────────────────────────────────────────
+function doAtk(){
+  gac();
+  // Flying: attack eagle
+  if(G.flying){
+    var eagle=null;for(var i=0;i<MONS.length;i++)if(MONS[i].id===99&&MONS[i].alive){eagle=MONS[i];break;}
+    if(!eagle){showMsg('No eagle nearby!');return;}
+    sAtk();var dmg=G.dmg+G.pdmg;eagle.hp-=dmg;
+    if(eagle.hp<=0){eagle.alive=false;sKill();G.flying=false;G.xp+=8000;var ex=diaRoll();showMsg('🦅 Eagle DEFEATED!\n+8000 XP'+ex+'\n✅ Landed on next island!',3500);}
+    else showMsg('Hit 🦅 Eagle for '+dmg+'!\nHP: '+numFmt(eagle.hp)+' remaining');
+    hud();return;
+  }
+  // Maze combat
+  if(G.world==='maze'){mzFight();return;}
+  // Normal combat
+  var m=nearest();if(!m){showMsg('No monster close enough!');return;}
+  sAtk();var dmg=G.dmg+G.pdmg;m.hp-=dmg;
+  if(m.hp<=0)killMon(m);else showMsg('Hit '+m.em+m.n+' for '+dmg+'!\n('+Math.max(0,m.hp)+' HP left)');
+}
+
+// Magic cycle
+var magIdx=0,MAGS=['none','fire','water','earth','air'];
+var MAG_ICO={none:'None',fire:'🔥Fire',water:'💧Water',earth:'🌎Earth',air:'💨Air'};
+function doMag(){
+  gac();magIdx=(magIdx+1)%MAGS.length;G.magic=MAGS[magIdx];
+  var btns=document.querySelectorAll('#btns button');
+  for(var i=0;i<btns.length;i++)if(btns[i].textContent.indexOf('✨')===0)btns[i].textContent='✨'+MAG_ICO[G.magic];
+  if(G.magic==='none'){showMsg('Magic: None — tap ✨ again to pick!');return;}
+  sMag(G.magic);
+  var m=nearest();if(!m){showMsg('Magic: '+MAG_ICO[G.magic]+' selected!\nGet close to a monster.');return;}
+  var dmg=mgDmg(G.magic,m.type);m.hp-=dmg;
+  if(m.hp<=0)killMon(m);else showMsg(MAG_ICO[G.magic]+' '+dmg+' dmg on '+m.n+'!');
+}
+function doFree(){
+  var m=nearest();
+  if(!m||!m.mini||!m.csd){showMsg('No cursed mini-boss nearby!\nWeaken to 40% HP first.');return;}
+  if(m.hp>m.mhp*.4){showMsg('Weaken '+m.n+' below 40% HP first!');return;}
+  m.csd=false;G.dia++;showMsg('🔓 '+m.n+' freed!\n+1 💎');hud();
+}
+function doMine(){
+  gac();if(G.mined>=10000){showMsg('⛏️ Mine limit! Place a block first.');return;}
+  G.mined++;if(Math.random()<.5)G.wood++;beep(150,'square',.06,.12);
+  var ex=diaRoll();showMsg(ex?'⛏️ Found 💎!'+ex:'⛏️ Mined! Wood:'+G.wood);hud();
+}
+function doPlace(){
+  if(G.world==='special'){showMsg('❌ No placing in the Special World!');return;}
+  if(G.wood<1){showMsg('No wood! Mine more.');return;}
+  G.wood--;G.mined=Math.max(0,G.mined-1);beep(200,'square',.08,.15);showMsg('🧱 Placed! Wood:'+G.wood);hud();
+}
+function doPvp(){
+  gac();
+  var names=['Chan','Jacob','Soyool','Donald','Pounce','Berry'];
+  // Also use online players if available
+  if(ONLINE_PLAYERS.length)for(var i=0;i<ONLINE_PLAYERS.length;i++)names.push(ONLINE_PLAYERS[i].u);
+  var opp=names[Math.floor(Math.random()*names.length)];
+  if(Math.random()<.6){G.pvpW++;G.dia++;sKill();showMsg('🥊 Beat '+opp+'!\n+1 💎! (Wins:'+G.pvpW+')');}
+  else{sHit();if(G.dia>0){G.dia--;showMsg('🥊 '+opp+' beat you!\n-1 💎');}else showMsg('🥊 '+opp+' beat you!');}
+  hud();
+}
+function wMv(dx,dy){
+  gac();
+  G.px=Math.max(20,Math.min(W-20,G.px+dx*Math.floor(W/22)));
+  G.py=Math.max(60,Math.min(H-90,G.py+dy*Math.floor(H/18)));
+  beep(55,'square',.04,.07);
+  for(var i=0;i<MONS.length;i++){
+    var m=MONS[i];if(!m.alive||m.world!==G.world||m.id===99)continue;
+    if(Math.hypot(m.x-G.px,m.y-G.py)<50){G.hp-=m.dmg;sHit();showMsg(m.em+m.n+' hit you for '+m.dmg+'!');if(G.hp<=0)die();hud();break;}
+  }
+}
+function goWorld(w){
+  gac();
+  var ev=null;for(var i=0;i<EVTS.length;i++)if(EVTS[i].id===w){ev=EVTS[i];break;}
+  if(ev&&!evActive(w)){
+    var mn=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    showMsg('❌ '+ev.name+' only in '+ev.months.map(function(m){return mn[m];}).join('/')+'\nCome back then! 📅',3000);return;
+  }
+  if(w==='maze'){
+    var cyc=null;for(var i=0;i<MONS.length;i++)if(MONS[i].id===3){cyc=MONS[i];break;}
+    if(cyc&&cyc.alive){showMsg('🧿 Defeat the Hub Cyclops first\nto unlock the Maze!');return;}
+    buildMaze();showMsg('🌀 Maze Level '+G.mzLv+' ('+MS+'×'+MS+')\n▲▼◀▶ to move | ⚔️ to fight\nGoal: 👺 fight → 🔴 fight → 🏆 WIN!',4000);
+  }
+  G.world=w;G.flying=false;G.px=W/2;G.py=H/2;
+  if(ev)showMsg(ev.em+' Welcome to '+ev.name+'!',2500);
+  hud();
+}
+
+// ── MAZE ─────────────────────────────────────────────────────────────────────
+function mzMv(dx,dy){
+  if(!G.on||G.world!=='maze'||G.mzWon)return;
+  gac();
+  var nx=G.mzX+dx,ny=G.mzY+dy;
+  if(nx<0||ny<0||nx>=MS||ny>=MS){showMsg('Edge of maze!');return;}
+  var cell=MG[ny][nx];
+  if(cell===1){beep(120,'square',.05,.1);showMsg('🧱 Wall! Try another direction.');return;}
+  sMzMv();G.mzX=nx;G.mzY=ny;
+  if(cell===3){sTrap();G.hp=Math.max(1,G.hp-50);showMsg('🪤 Trap! -50 HP!');if(G.hp<=0){die();return;}hud();}
+  if(G.mzMA&&G.mzX===G.mzMC&&G.mzY===G.mzMR){showMsg('👺 MINITURE IS HERE!\nTap ⚔️ to fight!\n(Hits back 500 dmg!)');return;}
+  if(G.mzX===MS-2&&G.mzY===MS-2){
+    if(G.mzBA){showMsg('🔴 BLOODY CYCLOPS guards the exit!\nTap ⚔️ to fight it!');return;}
+    else{mzWin();return;}
+  }
+  // Chase from lv2
+  if(G.mzLv>=2&&G.mzMA){
+    var dr=G.mzY-G.mzMR,dc=G.mzX-G.mzMC;
+    var sr=Math.abs(dr)>=Math.abs(dc)?Math.sign(dr):0,sc2=sr===0?Math.sign(dc):0;
+    var nr2=G.mzMR+sr,nc2=G.mzMC+sc2;
+    if(nr2>0&&nr2<MS-1&&nc2>0&&nc2<MS-1&&MG[nr2][nc2]!==1){G.mzMR=nr2;G.mzMC=nc2;}
+    if(G.mzMR===G.mzY&&G.mzMC===G.mzX){G.hp=Math.max(1,G.hp-200);sHit();showMsg('👺 Miniture caught you! -200 HP!\nTap ⚔️ now!');if(G.hp<=0)die();hud();}
+  }
+}
+function mzFight(){
+  gac();sAtk();
+  if(G.mzMA&&G.mzX===G.mzMC&&G.mzY===G.mzMR){
+    var d=G.dmg+G.pdmg;G.mzMHp-=d;
+    if(G.mzMHp<=0){G.mzMA=false;sKill();showMsg('👺 MINITURE DEFEATED! 🎉\nHead to the glowing 🏆 exit!\nFight the 🔴 Cyclops guarding it!',3500);}
+    else{G.hp=Math.max(1,G.hp-500);sHit();showMsg('Hit 👺 for '+d+'! HP: '+G.mzMHp+'\n💢 Hit back 500! Keep going!');if(G.hp<=0)die();}
+    hud();return;
+  }
+  if(G.mzBA&&G.mzX===MS-2&&G.mzY===MS-2){
+    var d2=G.dmg+G.pdmg;G.mzBHp-=d2;
+    if(G.mzBHp<=0){
+      G.mzBA=false;sKill();
+      showMsg('🔴 CYCLOPS DEFEATED!\n🏆 Collecting your reward...',1500);
+      setTimeout(function(){mzWin();},1200);
+    } else {
+      G.hp=Math.max(1,G.hp-170);sHit();
+      showMsg('Hit 🔴 for '+d2+'! HP: '+G.mzBHp+'\n💢 Hit back 170!');
+      if(G.hp<=0)die();
+    }
+    hud();return;
+  }
+  showMsg('Navigate to 👺 first!\nUse ▲▼◀▶ arrows to move.');
+}
+function mzWin(){
+  G.mzWon=true;G.dia+=10000;G.mzClr++;sWin();
+  var ws=document.getElementById('winSub');if(ws)ws.textContent='Maze Level '+G.mzLv+' Complete!';
+  var wi=document.getElementById('winInfo');if(wi)wi.textContent='+10,000 💎 Diamonds!\nTotal maze clears: '+G.mzClr;
+  showScreen('win');hud();
+}
+function nextMaze(){
+  G.mzLv++;buildMaze();
+  showScreen('start');
+  showMsg('🌀 Maze Level '+G.mzLv+'!\nSize: '+MS+'×'+MS+' — Good luck!',3000);
+  hud();
+  setTimeout(function(){startGame();},500);
+}
+
+// ── CRAFT / SHOP / PET ────────────────────────────────────────────────────────
+function craft(it){
+  var R={
+    bed:{w:5,d:0,fn:function(){G.bed=true;G.day=true;},t:'🛏️ Bed crafted! Night skipped!'},
+    wing:{w:10,d:5,fn:function(){G.wings=true;var fb=document.getElementById('flyBtn');if(fb)fb.style.display='';},t:'🪽 Wings crafted!\nTap the 🪽Fly button to take off!'},
+    wsw:{w:3,d:0,fn:function(){G.wpn='Wood Sword';G.dmg=30;},t:'🗡️ Wood Sword crafted!'},
+    isw:{w:8,d:2,fn:function(){G.wpn='Iron Sword';G.dmg=80;},t:'⚔️ Iron Sword crafted!'},
+    dsw:{w:0,d:15,fn:function(){G.wpn='Diamond Sword';G.dmg=150;},t:'💠 Diamond Sword crafted!'}
+  };
+  var r=R[it];if(!r)return;
+  if(G.wood<r.w||G.dia<r.d){showMsg('Need: '+r.w+'🪵 wood + '+r.d+'💎');closeScreen();return;}
+  G.wood-=r.w;G.dia-=r.d;r.fn();sCraft();showMsg(r.t);hud();closeScreen();
+}
+function buy(it){
+  var S={
+    wsw:{c:5,fn:function(){G.wpn='Wood Sword';G.dmg=30;},t:'🗡️ Wood Sword!'},
+    isw:{c:20,fn:function(){G.wpn='Iron Sword';G.dmg=80;},t:'⚔️ Iron Sword!'},
+    brn:{c:40,fn:function(){G.pet='Brainout';G.pdmg=20;},t:'🐉 Brainout joined! +20 dmg'},
+    tll:{c:100,fn:function(){G.pet='Tra La Laro';G.pdmg=70;G.mhp=600;G.hp=Math.min(G.hp*3,600);G.dmg+=70;},t:'🌟 Tra La Laro! 3×HP +70 dmg!'},
+    sec:{c:233332334,fn:function(){setTimeout(function(){showScreen('secret');},100);},t:''}
+  };
+  var s=S[it];if(!s)return;
+  if(G.dia<s.c){showMsg('Need '+numFmt(s.c)+'💎!\nYou have '+numFmt(G.dia)+'.');closeScreen();return;}
+  G.dia-=s.c;s.fn();if(s.t)sBuy();if(s.t)showMsg(s.t,3000);hud();if(s.t)closeScreen();
+}
+function setSec(p){G.spp=p;G.spa=true;G.pet='Secret Brainout';G.pdmg=70;sBuy();showMsg('🔮 Secret Brainout: '+p+' power!\nAuto-attacks enemies!');hud();closeScreen();}
+
+// Secret pet auto-attack
+var spTimer=0;
+function spTick(){
+  if(!G.spa||!G.on)return;
+  if(G.world==='maze'){
+    if(G.mzMA){G.mzMHp-=190;if(G.mzMHp<=0){G.mzMA=false;sKill();showMsg('🔮 Secret Brainout defeated the Miniture!');}}
+    else if(G.mzBA){G.mzBHp-=190;if(G.mzBHp<=0){G.mzBA=false;sKill();showMsg('🔮 Secret Brainout defeated the Cyclops!');}}
+    return;
+  }
+  var best=null,bd=9999;
+  for(var i=0;i<MONS.length;i++){var m=MONS[i];if(!m.alive||m.world!==G.world||m.id===99)continue;var d=Math.hypot(m.x-G.px,m.y-G.py);if(d<bd){bd=d;best=m;}}
+  if(!best||bd>W*.45)return;
+  var wk={fire:'water',water:'fire',earth:'air',air:'earth'};
+  best.hp-=wk[G.spp]===best.type?190:70;beep(800,'sine',.1,.18);
+  if(best.hp<=0)killMon(best);
+}
+
+// Tilt
+var lastTilt=0;
+function onTilt(e){
+  if(!G.on||G.world!=='maze')return;
+  var now=Date.now();if(now-lastTilt<320)return;
+  var gx=e.gamma||0,gy=e.beta||0;
+  if(Math.abs(gx)<8&&Math.abs(gy)<8)return;
+  if(Math.abs(gx)>=Math.abs(gy))mzMv(gx<0?-1:1,0);
+  else mzMv(0,gy<0?-1:1);
+  lastTilt=now;
+}
+function enableTilt(){
+  if(typeof DeviceOrientationEvent!=='undefined'&&typeof DeviceOrientationEvent.requestPermission==='function'){
+    DeviceOrientationEvent.requestPermission().then(function(s){
+      if(s==='granted'){window.addEventListener('deviceorientation',onTilt);showMsg('📱 Tilt ON! Tilt iPad in maze!',2500);}
+    }).catch(function(){showMsg('Tilt not available.',2000);});
+  } else {
+    window.addEventListener('deviceorientation',onTilt);showMsg('📱 Tilt controls ON!',2000);
+  }
+  closeScreen();
+}
+
+// ── DRAW ──────────────────────────────────────────────────────────────────────
+function drawHub(){
+  var sc=G.day?'#4a90c8':'#060614';cx.fillStyle=sc;cx.fillRect(0,0,W,H);
+  if(!G.day){cx.fillStyle='rgba(255,255,200,.8)';for(var i=0;i<60;i++)cx.fillRect((i*137+20)%W,(i*89+5)%(H*.5),2,2);}
+  if(G.day){cx.fillStyle='#FFD700';cx.beginPath();cx.arc(W-70,55,28,0,Math.PI*2);cx.fill();}
+  else{cx.fillStyle='#ccd';cx.beginPath();cx.arc(W-70,55,24,0,Math.PI*2);cx.fill();}
+  if(G.day){cx.fillStyle='rgba(255,255,255,.8)';cx.beginPath();cx.ellipse(W*.15,H*.12,70,24,0,0,Math.PI*2);cx.fill();cx.beginPath();cx.ellipse(W*.5,H*.09,90,26,0,0,Math.PI*2);cx.fill();}
+  var isY=H*.68,isX=W*.09,isW=W*.82;
+  cx.fillStyle='#3d7a4a';cx.fillRect(isX,isY,isW,H*.04);cx.fillStyle='#5c4427';cx.fillRect(isX,isY+H*.04,isW,H*.15);
+  var cols=['#e74c3c','#3498db','#f1c40f','#2ecc71','#9b59b6','#e67e22'],bw=Math.floor(isW/11);
+  for(var i=0;i<11;i++){cx.fillStyle=cols[i%6];cx.fillRect(isX+i*bw,isY-H*.044,bw-2,H*.044);}
+  var dc=['#e74c3c','#3498db','#2ecc71','#f39c12'];
+  for(var i=0;i<4;i++){var dx=isX+isW*.12+i*isW*.2;cx.fillStyle=dc[i];cx.fillRect(dx,isY,36,H*.08);cx.font='10px sans-serif';cx.fillStyle='#fff';cx.fillText('D'+(i+1),dx+8,isY+H*.09);}
+  cx.fillStyle='#888';cx.fillRect(W*.38,isY-H*.1,W*.24,H*.02);
+  cx.fillStyle='#c0392b';cx.fillRect(W*.84,isY-H*.1,W*.12,H*.02);
+  cx.font='11px sans-serif';cx.fillStyle='#ff6b6b';cx.fillText('🔴 Maze',W*.82,isY-H*.11);
+  cx.fillStyle='rgba(41,128,185,.75)';cx.fillRect(0,H*.88,W,H*.12);
+  cx.fillStyle='#7a1a00';cx.fillRect(0,H*.965,W,H*.035);
+  cx.fillStyle='#e74c3c';for(var i=0;i<10;i++){var lx=(i*W*.1+G.tick*.8)%W;cx.beginPath();cx.arc(lx,H*.975,W*.012,0,Math.PI*2);cx.fill();}
+  cx.font='bold '+Math.floor(H*.03)+'px sans-serif';cx.fillStyle=G.day?'#1a2a1a':'#fff';cx.fillText('🏝️ THE HUB',W*.42,isY+H*.02);
+  if(!G.day){cx.fillStyle='rgba(0,0,20,.38)';cx.fillRect(0,0,W,H);}
+}
+function drawDungeon(){
+  cx.fillStyle='#0a0404';cx.fillRect(0,0,W,H);
+  for(var r=0;r<Math.ceil(H/48);r++)for(var c=0;c<Math.ceil(W/64);c++){cx.fillStyle=(r+c)%2===0?'#1a0808':'#1e0c0c';cx.fillRect(c*64,r*48,64,48);cx.strokeStyle='#3a1818';cx.strokeRect(c*64,r*48,64,48);}
+  var lys=[H*.35,H*.55,H*.75];
+  for(var i=0;i<lys.length;i++){var ly=lys[i];cx.fillStyle='#8B0000';cx.fillRect(0,ly,W,H*.05);cx.fillStyle='#e74c3c';for(var j=0;j<12;j++){var lx=(j*W*.09+G.tick*(1.2+i*.3))%W;cx.beginPath();cx.arc(lx,ly+H*.025,W*.016,0,Math.PI*2);cx.fill();}}
+  cx.font='bold '+Math.floor(H*.03)+'px sans-serif';cx.fillStyle='#e74c3c';cx.fillText('🏚️ DUNGEON — EXTREME DANGER',W*.22,H*.05);
+}
+function drawSpecial(){
+  cx.fillStyle='#06061a';cx.fillRect(0,0,W,H);
+  cx.fillStyle='rgba(180,180,255,.8)';for(var i=0;i<80;i++)cx.fillRect((i*97+10)%W,(i*137+5)%H,2,2);
+  var ems=['🌋','💨','🌊','🌑'];cx.font='32px serif';for(var i=0;i<ems.length;i++)cx.fillText(ems[i],W*.12+i*W*.22,H*.55);
+  cx.font='bold '+Math.floor(H*.03)+'px sans-serif';cx.fillStyle='#a855f7';cx.fillText('🌌 SPECIAL WORLD',W*.32,H*.08);
+}
+function drawMaze(){
+  cx.fillStyle='#050508';cx.fillRect(0,0,W,H);
+  var cs=Math.min(Math.floor(W*.9/MS),Math.floor(H*.82/MS));
+  var ox=Math.floor((W-MS*cs)/2),oy=Math.floor((H*.9-MS*cs)/2)+20;
+  for(var r=0;r<MS;r++){
+    for(var c=0;c<MS;c++){
+      var v=MG[r][c],x=ox+c*cs,y=oy+r*cs;
+      if(v===1){cx.fillStyle='#1a082e';cx.fillRect(x,y,cs,cs);cx.strokeStyle='#3a1a4e';cx.strokeRect(x,y,cs,cs);}
+      else if(v===2){var gl=.3+Math.abs(Math.sin(G.tick*.06))*.4;cx.fillStyle='rgba(255,215,0,'+gl+')';cx.fillRect(x,y,cs,cs);cx.fillStyle='#c8a800';cx.fillRect(x+2,y+2,cs-4,cs-4);cx.font=Math.max(10,cs-4)+'px serif';cx.fillText('🏆',x+2,y+cs-2);}
+      else if(v===3){cx.fillStyle='#2a0505';cx.fillRect(x,y,cs,cs);cx.fillStyle='#cc2222';cx.fillRect(x+2,y+cs-5,cs-4,4);if(cs>14){cx.font='12px serif';cx.fillText('⚠️',x+1,y+cs-1);}}
+      else{cx.fillStyle='#0a050f';cx.fillRect(x,y,cs,cs);}
+    }
+  }
+  cx.fillStyle='rgba(0,180,0,.2)';cx.fillRect(ox+cs,oy+cs,cs,cs);
+  if(G.mzMA){var mx=ox+G.mzMC*cs,my=oy+G.mzMR*cs;cx.fillStyle='rgba(255,0,0,.25)';cx.fillRect(mx,my,cs,cs);cx.font=Math.max(10,cs-2)+'px serif';cx.fillText('👺',mx+cs*.05,my+cs*.85);}
+  if(G.mzBA){var bx=ox+(MS-2)*cs,by=oy+(MS-2)*cs;cx.fillStyle='rgba(200,0,0,.3)';cx.fillRect(bx,by,cs,cs);cx.font=Math.max(10,cs-2)+'px serif';cx.fillText('🔴',bx+cs*.05,by+cs*.85);}
+  var px=ox+G.mzX*cs+cs/2,py=oy+G.mzY*cs+cs/2,pr=Math.max(6,cs/2.5);
+  cx.fillStyle=G.avatarColor||'#22c55e';cx.beginPath();cx.arc(px,py,pr,0,Math.PI*2);cx.fill();
+  cx.fillStyle='#000';cx.font='bold '+Math.max(7,Math.floor(pr*.9))+'px sans-serif';cx.textAlign='center';cx.fillText(G.avatar||'YOU',px,py+pr*.4);cx.textAlign='left';
+  if(G.mzMA&&G.mzMHp>0){var mxH=3000+G.mzLv*500;cx.fillStyle='rgba(0,0,0,.7)';cx.fillRect(W*.05,H*.88,W*.38,15);cx.fillStyle='#ef4444';cx.fillRect(W*.05,H*.88,W*.38*(G.mzMHp/mxH),15);cx.font='11px sans-serif';cx.fillStyle='#fff';cx.fillText('👺 Miniture: '+G.mzMHp+' HP',W*.06,H*.893);}
+  if(G.mzBA&&G.mzBHp>0){var mxB=5000+G.mzLv*1000;cx.fillStyle='rgba(0,0,0,.7)';cx.fillRect(W*.57,H*.88,W*.38,15);cx.fillStyle='#c0392b';cx.fillRect(W*.57,H*.88,W*.38*(G.mzBHp/mxB),15);cx.font='11px sans-serif';cx.fillStyle='#fff';cx.fillText('🔴 Cyclops: '+G.mzBHp+' HP',W*.58,H*.893);}
+  cx.font=Math.floor(H*.018)+'px sans-serif';cx.fillStyle='#888';cx.fillText('🚩Start  🏆Exit  👺Miniture  🔴Boss  ⚠️Trap(-50HP)',W*.05,H*.03);
+  cx.fillStyle='#ff6b6b';cx.fillText('🌀 Maze Lv'+G.mzLv+' ('+MS+'×'+MS+') | ⚔️ to fight | 👺 → 🔴 → 🏆',W*.04,H*.965);
+}
+function drawSky(){
+  cx.fillStyle='#0d1b3e';cx.fillRect(0,0,W,H);
+  cx.fillStyle='rgba(255,255,255,.6)';for(var i=0;i<50;i++)cx.fillRect((i*137+10)%W,(i*89+5)%(H*.6),2,2);
+  cx.fillStyle='rgba(255,255,255,.12)';for(var i=0;i<5;i++){cx.beginPath();cx.ellipse((i*W*.22+G.tick*.4)%W,H*.2+Math.sin(i)*H*.08,W*.1,H*.04,0,0,Math.PI*2);cx.fill();}
+  cx.fillStyle='rgba(61,122,74,.7)';cx.beginPath();cx.ellipse(W*.2,H*.85,W*.18,H*.06,0,0,Math.PI*2);cx.fill();
+  cx.fillStyle='rgba(61,122,74,.7)';cx.beginPath();cx.ellipse(W*.75,H*.88,W*.2,H*.07,0,0,Math.PI*2);cx.fill();
+  cx.font='bold '+Math.floor(H*.025)+'px sans-serif';cx.fillStyle='#93c5fd';cx.fillText('🪽 FLYING — Defeat 🦅 Eagle to land on next island!',W*.05,H*.07);
+  // Eagle
+  for(var i=0;i<MONS.length;i++){
+    var m=MONS[i];if(m.id!==99||!m.alive)continue;
+    if(G.tick%6===0){var ex=G.px-m.x,ey=G.py-m.y,ed=Math.hypot(ex,ey);if(ed>80){m.x+=ex/ed*2.5;m.y+=ey/ed*2.5;}}
+    cx.font=Math.floor(H*.08)+'px serif';cx.fillText('🦅',m.x-H*.04,m.y+H*.04);
+    cx.fillStyle='rgba(0,0,0,.7)';cx.fillRect(W*.1,H*.12,W*.8,18);
+    cx.fillStyle='#dc2626';cx.fillRect(W*.1,H*.12,W*.8*(m.hp/m.mhp),18);
+    cx.font='bold 12px sans-serif';cx.fillStyle='#fff';cx.textAlign='center';cx.fillText('🦅 Monster Eagle: '+numFmt(m.hp)+' / '+numFmt(m.mhp)+' HP',W*.5,H*.134);cx.textAlign='left';
+    if(Math.hypot(m.x-G.px,m.y-G.py)<60&&G.tick%60===0){G.hp=Math.max(1,G.hp-150);sHit();showMsg('🦅 Eagle strikes you for 150!');if(G.hp<=0)die();hud();}
+  }
+}
+function drawEvWorld(id){
+  var ev=null;for(var i=0;i<EVTS.length;i++)if(EVTS[i].id===id){ev=EVTS[i];break;}
+  cx.fillStyle='#0a0a0a';cx.fillRect(0,0,W,H);if(!ev)return;
+  var lbl='',lcol='#fff';
+  if(id==='christmas'){cx.fillStyle='#ddeeff';cx.fillRect(0,H*.72,W,H*.28);for(var i=0;i<5;i++){var tx=W*.1+i*W*.18;cx.fillStyle='#1e7a1e';cx.beginPath();cx.moveTo(tx,H*.72);cx.lineTo(tx-W*.06,H*.54);cx.lineTo(tx+W*.06,H*.54);cx.closePath();cx.fill();}cx.fillStyle='rgba(200,220,255,.7)';for(var i=0;i<25;i++)cx.fillRect((i*W*.04+G.tick*.4)%W,(i*H*.07+G.tick*.3)%H,4,4);lbl='🎄 CHRISTMAS!';lcol='#ffd700';}
+  else if(id==='halloween'){cx.fillStyle='#120800';cx.fillRect(0,H*.68,W,H*.32);for(var i=0;i<5;i++){cx.font=Math.floor(H*.055)+'px serif';cx.fillText('🎃',W*.07+i*W*.18,H*.78);}cx.fillStyle='#cc6600';cx.beginPath();cx.arc(W*.88,H*.1,H*.06,0,Math.PI*2);cx.fill();lbl='🎃 HALLOWEEN!';lcol='#f97316';}
+  else if(id==='summer'){cx.fillStyle='#006994';cx.fillRect(0,H*.5,W,H*.5);cx.fillStyle='#87CEEB';cx.fillRect(0,0,W,H*.5);cx.fillStyle='#FFD700';cx.beginPath();cx.arc(W*.5,H*.15,H*.1,0,Math.PI*2);cx.fill();cx.fillStyle='#ffe4c4';cx.fillRect(0,H*.48,W,H*.04);lbl='🌊 SUMMER FESTIVAL!';lcol='#ff6b00';}
+  else if(id==='newyear'){var fws=[[W*.2,H*.3,'#ff0'],[W*.5,H*.2,'#f0f'],[W*.8,H*.35,'#0ff']];for(var fi=0;fi<fws.length;fi++){var fw=fws[fi],fr=(G.tick*2)%60;cx.strokeStyle=fw[2];cx.lineWidth=2;for(var a=0;a<12;a++){var ang=a*Math.PI/6;cx.beginPath();cx.moveTo(fw[0],fw[1]);cx.lineTo(fw[0]+Math.cos(ang)*fr,fw[1]+Math.sin(ang)*fr);cx.stroke();}cx.lineWidth=1;}lbl='🎆 HAPPY NEW YEAR!';lcol='#ffd700';}
+  else if(id==='easter'){cx.fillStyle='#90ee90';cx.fillRect(0,H*.7,W,H*.3);for(var i=0;i<10;i++){cx.font='26px serif';cx.fillText('🥚',W*.06+i*W*.09,H*.76+Math.sin(i)*H*.04);}lbl='🐣 EASTER!';lcol='#ff9800';}
+  else if(id==='valentine'){for(var i=0;i<18;i++){cx.font='22px serif';cx.fillText('💕',(i*W*.06+G.tick*.3)%W,(i*H*.09+G.tick*.2)%H);}lbl="💝 VALENTINE'S!";lcol='#ff1493';}
+  else if(id==='stpatrick'){cx.fillStyle='rgba(46,204,113,.12)';cx.fillRect(0,0,W,H);for(var i=0;i<12;i++){cx.font='26px serif';cx.fillText('🍀',(i*W*.09+G.tick*.2)%W,(i*H*.09)%H);}lbl="🍀 ST PATRICK'S!";lcol='#2ecc71';}
+  else if(id==='thanksgiving'){cx.fillStyle='#4a3000';cx.fillRect(0,H*.7,W,H*.3);for(var i=0;i<5;i++){cx.font='32px serif';cx.fillText('🍂',W*.06+i*W*.18,H*.5+Math.sin(G.tick*.015+i)*H*.1);}lbl='🦃 THANKSGIVING!';lcol='#d4a057';}
+  else if(id==='lunar'){for(var i=0;i<8;i++){cx.font='26px serif';cx.fillText('🏮',(i*W*.13+G.tick*.4)%W,H*.2+Math.sin(G.tick*.02+i)*H*.05);}cx.font='50px serif';cx.fillText('🐉',W*.45,H*.45);lbl='🏮 LUNAR NEW YEAR!';lcol='#ff3d00';}
+  else if(id==='school'){cx.fillStyle='#f5f5dc';cx.fillRect(0,H*.7,W,H*.3);cx.font='40px serif';cx.fillText('🧠',W*.48,H*.42);cx.fillText('📚',W*.3,H*.38);lbl='📚 BACK TO SCHOOL!';lcol='#9c27b0';}
+  if(lbl){cx.font='bold '+Math.floor(H*.04)+'px sans-serif';cx.fillStyle=lcol;cx.fillText(lbl,W*.28,H*.08);}
+}
+function drawMons(){
+  for(var i=0;i<MONS.length;i++){
+    var m=MONS[i];if(!m.alive||m.world!==G.world||G.world==='maze'||m.id===99)continue;
+    if(G.tick%8===0){var dx=G.px-m.x,dy=G.py-m.y,d=Math.hypot(dx,dy),sp=G.day?1.6:3.4;if(d>60&&d<W*.5){m.x+=dx/d*sp;m.y+=dy/d*sp;}}
+    var fs=m.mini?Math.floor(H*.055):Math.floor(H*.042);
+    cx.font=fs+'px serif';cx.fillText(m.em,m.x-fs*.5,m.y+fs*.4);
+    if(m.mini){cx.font='bold '+Math.floor(H*.018)+'px sans-serif';cx.fillStyle='#fbbf24';cx.fillText(m.n,m.x-m.n.length*4,m.y-fs*.6);if(m.csd){cx.fillStyle='#a855f7';cx.fillText('🔮CURSED',m.x-28,m.y-fs*.9);}}
+    var bw=m.mini?72:48;cx.fillStyle='rgba(0,0,0,.65)';cx.fillRect(m.x-bw/2,m.y+8,bw,5);cx.fillStyle=m.mini?'#f59e0b':'#ef4444';cx.fillRect(m.x-bw/2,m.y+8,bw*Math.max(0,m.hp/m.mhp),5);
+  }
+}
+function drawOnlinePlayers(){
+  if(!ONLINE_PLAYERS.length)return;
+  var fs=Math.floor(H*.045);
+  for(var i=0;i<ONLINE_PLAYERS.length;i++){
+    var p=ONLINE_PLAYERS[i];
+    if(p.w!==G.world||G.world==='maze')continue;
+    var px=p.x||W/2,py=p.y||H/2;
+    cx.save();cx.shadowColor=p.col||'#3b82f6';cx.shadowBlur=10;
+    cx.font=fs+'px serif';cx.fillText(p.av||'🧙',px-fs*.46,py+fs*.4);
+    cx.restore();
+    cx.font='bold '+Math.floor(H*.016)+'px sans-serif';cx.fillStyle=p.col||'#60a5fa';
+    cx.textAlign='center';cx.fillText(p.u,px,py-fs*.2);cx.textAlign='left';
+    if(p.hp&&p.mhp){cx.fillStyle='rgba(0,0,0,.6)';cx.fillRect(px-20,py+10,40,4);cx.fillStyle=p.col||'#60a5fa';cx.fillRect(px-20,py+10,40*(p.hp/p.mhp),4);}
+  }
+  // Sidebar for players in other worlds
+  var others=ONLINE_PLAYERS.filter(function(p){return p.w!==G.world;});
+  if(others.length){
+    var sh=Math.min(others.length*22+22,180);
+    cx.fillStyle='rgba(0,0,0,.75)';cx.fillRect(W-138,H*.25,133,sh);
+    cx.font='bold 11px sans-serif';cx.fillStyle='#60a5fa';cx.fillText('👥 Also online:',W-133,H*.25+14);
+    for(var i=0;i<Math.min(others.length,6);i++){cx.font='11px sans-serif';cx.fillStyle=others[i].col||'#ccc';cx.fillText((others[i].av||'🧙')+' '+others[i].u,W-133,H*.25+28+i*22);}
+  }
+}
+function drawPlayer(){
+  if(G.world==='maze')return;
+  var fs=Math.floor(H*.05);
+  var icon=G.flying?'🪽':(G.avatar||'🧙');
+  cx.save();cx.shadowColor=G.avatarColor||'#22c55e';cx.shadowBlur=12;
+  cx.font=fs+'px serif';cx.fillText(icon,G.px-fs*.46,G.py+fs*.4);
+  cx.restore();
+  if(G.username){cx.font='bold '+Math.floor(H*.018)+'px sans-serif';cx.fillStyle=G.avatarColor||'#22c55e';cx.textAlign='center';cx.fillText(G.username,G.px,G.py-fs*.25);cx.textAlign='left';}
+  cx.fillStyle='rgba(0,0,0,.6)';cx.fillRect(G.px-24,G.py+10,48,5);cx.fillStyle=G.avatarColor||'#22c55e';cx.fillRect(G.px-24,G.py+10,48*Math.max(0,G.hp/G.mhp),5);
+  if(G.pet){cx.font=Math.floor(fs*.7)+'px serif';cx.fillText(G.spa?'🔮':'🐉',G.px+fs*.45,G.py);}
+}
+
+// ── MAIN LOOP ─────────────────────────────────────────────────────────────────
+function loop(){
+  G.tick++;
+  var ph=(G.tick%G.dlen)/G.dlen;G.day=ph<.58;
+  if(G.wday&&!G.day)sNight();G.wday=G.day;
+  spTimer++;if(spTimer>=180){spTimer=0;spTick();}
+  mpTick++;if(mpTick>=120){mpTick=0;mpWrite();mpRead();}
+  showEvBanner();
+  cx.clearRect(0,0,W,H);
+  if(G.flying){
+    drawSky();drawPlayer();
+  } else {
+    var evIds=EVTS.map(function(e){return e.id;});
+    if(G.world==='hub')drawHub();
+    else if(G.world==='dungeon')drawDungeon();
+    else if(G.world==='special')drawSpecial();
+    else if(G.world==='maze')drawMaze();
+    else if(evIds.indexOf(G.world)>=0)drawEvWorld(G.world);
+    else drawHub();
+    if(G.world!=='maze'){drawMons();drawOnlinePlayers();drawPlayer();}
+  }
+  hud();
+  requestAnimationFrame(loop);
+}
+
+// ── START ─────────────────────────────────────────────────────────────────────
+function startGame(){
+  gac();G.on=true;G.px=W/2;G.py=H/2;placeMons();
+  var all=document.querySelectorAll('.screen');for(var i=0;i<all.length;i++)all[i].classList.remove('active');
+  buildEvBtns();
+  var fb=document.getElementById('flyBtn');if(fb)fb.style.display=G.wings?'':'none';
+  var act=activeEvts();
+  if(act.length)showMsg('🎉 '+act.map(function(e){return e.em+e.name;}).join(' & ')+' active!\nCheck Events panel!',3500);
+  else showMsg('⚔️ Welcome '+(G.username||'')+'!\nArrows/WASD = Move | Space = Attack',3000);
+}
+
+document.addEventListener('keydown',function(e){
+  if(!G.on)return;
+  if(e.key==='ArrowLeft'||e.key==='a'){G.world==='maze'?mzMv(-1,0):wMv(-1,0);}
+  if(e.key==='ArrowRight'||e.key==='d'){G.world==='maze'?mzMv(1,0):wMv(1,0);}
+  if(e.key==='ArrowUp'||e.key==='w'){G.world==='maze'?mzMv(0,-1):wMv(0,-1);}
+  if(e.key==='ArrowDown'||e.key==='s'){G.world==='maze'?mzMv(0,1):wMv(0,1);}
+  if(e.key===' '){e.preventDefault();doAtk();}
+});
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+G.avatar='🧙';G.avatarColor='#22c55e';
+buildPickers();
+loadFbUrl();
+var cu=getCurUser();
+if(cu){G.username=cu.username||'';G.avatar=cu.avatar||'🧙';G.avatarColor=cu.color||'#22c55e';showScreen('start');}
+else{showScreen('login');}
+loop();
+</script>
+</body>
+</html>
